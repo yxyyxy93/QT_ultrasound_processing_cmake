@@ -1,0 +1,61 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-652754d54bb1b749776d.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "basic_plus_ImageSeg",
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "basic_plus_ImageSeg::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-basic_plus_ImageSeg-Debug-2d4998d6536f7c15b776.json",
+					"name" : "basic_plus_ImageSeg",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_plus_ImageSeg-Desktop_Qt_6_4_3_MinGW_64_bit-Debug",
+		"source" : "D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/basic_plus_ImageSeg"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 4
+	}
+}

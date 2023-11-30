@@ -1,0 +1,13 @@
+# ninja log v5
+10334	32193	7230166588340909	CMakeFiles/basic_read.dir/trimdialog.cpp.obj	6b5beffd4491d1c9
+30	1120	7230171877005284	basic_read_autogen/timestamp	3aaf9f0e333c5f99
+23	1482	7230178192301509	build.ninja	c430e5c11848bf97
+10287	44369	7230166805132282	CMakeFiles/basic_read.dir/basic_read_autogen/mocs_compilation.cpp.obj	46833fd67b1e79b1
+30	1120	7230171877005284	basic_read_autogen/mocs_compilation.cpp	3aaf9f0e333c5f99
+30	1120	7230171877005284	D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_read-Desktop_Qt_6_4_3_MinGW_64_bit-Release/basic_read_autogen/timestamp	3aaf9f0e333c5f99
+30	1120	7230171877005284	D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_read-Desktop_Qt_6_4_3_MinGW_64_bit-Release/basic_read_autogen/mocs_compilation.cpp	3aaf9f0e333c5f99
+10347	22423	7230166584801065	CMakeFiles/basic_read.dir/utils.cpp.obj	5fb11990b7ebbd15
+10296	42237	7230166783806396	CMakeFiles/basic_read.dir/ultrasound_cscan_process.cpp.obj	6eb72aa9e8a0721b
+10316	32197	7230166663733170	CMakeFiles/basic_read.dir/main.cpp.obj	3eb6603510e4f13
+10306	77741	7230167138893112	CMakeFiles/basic_read.dir/qcustomplot.cpp.obj	4829d452e8b74a54
+1328	2894	7230171894590961	basic_read.exe	2945ac5aae5127db

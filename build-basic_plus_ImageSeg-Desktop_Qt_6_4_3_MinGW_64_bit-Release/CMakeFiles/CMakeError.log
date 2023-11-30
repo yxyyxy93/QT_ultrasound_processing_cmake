@@ -1,0 +1,238 @@
+Performing C++ SOURCE FILE Test CMAKE_HAVE_LIBC_PTHREAD failed with the following output:
+Change Dir: D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_plus_ImageSeg-Desktop_Qt_6_4_3_MinGW_64_bit-Release/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Qt/Tools/Ninja/ninja.exe cmTC_09a49 && [1/2] Building CXX object CMakeFiles/cmTC_09a49.dir/src.cxx.obj
+FAILED: CMakeFiles/cmTC_09a49.dir/src.cxx.obj 
+C:\Qt\Tools\mingw1120_64\bin\g++.exe -DCMAKE_HAVE_LIBC_PTHREAD   -o CMakeFiles/cmTC_09a49.dir/src.cxx.obj -c D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_plus_ImageSeg-Desktop_Qt_6_4_3_MinGW_64_bit-Release/CMakeFiles/CMakeTmp/src.cxx
+Cannot create temporary file in C:\WINDOWS\: Permission denied
+ninja: build stopped: subcommand failed.
+
+
+Source file was:
+#include <pthread.h>
+
+static void* test_func(void* data)
+{
+  return data;
+}
+
+int main(void)
+{
+  pthread_t thread;
+  pthread_create(&thread, NULL, test_func, NULL);
+  pthread_detach(thread);
+  pthread_cancel(thread);
+  pthread_join(thread, NULL);
+  pthread_atfork(NULL, NULL, NULL);
+  pthread_exit(NULL);
+
+  return 0;
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_plus_ImageSeg-Desktop_Qt_6_4_3_MinGW_64_bit-Release/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Qt/Tools/Ninja/ninja.exe cmTC_bed84 && [1/2] Building CXX object CMakeFiles/cmTC_bed84.dir/CheckFunctionExists.cxx.obj
+FAILED: CMakeFiles/cmTC_bed84.dir/CheckFunctionExists.cxx.obj 
+C:\Qt\Tools\mingw1120_64\bin\g++.exe   -DCHECK_FUNCTION_EXISTS=pthread_create -o CMakeFiles/cmTC_bed84.dir/CheckFunctionExists.cxx.obj -c D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_plus_ImageSeg-Desktop_Qt_6_4_3_MinGW_64_bit-Release/CMakeFiles/CheckLibraryExists/CheckFunctionExists.cxx
+Cannot create temporary file in C:\WINDOWS\: Permission denied
+ninja: build stopped: subcommand failed.
+
+
+
+Determining if the function pthread_create exists in the pthread failed with the following output:
+Change Dir: D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_plus_ImageSeg-Desktop_Qt_6_4_3_MinGW_64_bit-Release/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Qt/Tools/Ninja/ninja.exe cmTC_8c837 && [1/2] Building CXX object CMakeFiles/cmTC_8c837.dir/CheckFunctionExists.cxx.obj
+FAILED: CMakeFiles/cmTC_8c837.dir/CheckFunctionExists.cxx.obj 
+C:\Qt\Tools\mingw1120_64\bin\g++.exe   -DCHECK_FUNCTION_EXISTS=pthread_create -o CMakeFiles/cmTC_8c837.dir/CheckFunctionExists.cxx.obj -c D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_plus_ImageSeg-Desktop_Qt_6_4_3_MinGW_64_bit-Release/CMakeFiles/CheckLibraryExists/CheckFunctionExists.cxx
+Cannot create temporary file in C:\WINDOWS\: Permission denied
+ninja: build stopped: subcommand failed.
+
+
+
+Performing C++ SOURCE FILE Test HAVE_STDATOMIC failed with the following output:
+Change Dir: D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_plus_ImageSeg-Desktop_Qt_6_4_3_MinGW_64_bit-Release/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Qt/Tools/Ninja/ninja.exe cmTC_c7dd9 && [1/2] Building CXX object CMakeFiles/cmTC_c7dd9.dir/src.cxx.obj
+FAILED: CMakeFiles/cmTC_c7dd9.dir/src.cxx.obj 
+C:\Qt\Tools\mingw1120_64\bin\g++.exe -DHAVE_STDATOMIC   -o CMakeFiles/cmTC_c7dd9.dir/src.cxx.obj -c D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_plus_ImageSeg-Desktop_Qt_6_4_3_MinGW_64_bit-Release/CMakeFiles/CMakeTmp/src.cxx
+Cannot create temporary file in C:\WINDOWS\: Permission denied
+ninja: build stopped: subcommand failed.
+
+
+Source file was:
+#include <atomic>
+#include <cstdint>
+
+int main(int, char **)
+{
+    volatile std::atomic<char>    size_1;
+    volatile std::atomic<short>   size_2;
+    volatile std::atomic<int>     size_4;
+    volatile std::atomic<int64_t> size_8;
+
+    ++size_1;
+    ++size_2;
+    ++size_4;
+    ++size_8;
+
+    (void)size_1.load(std::memory_order_relaxed);
+    (void)size_2.load(std::memory_order_relaxed);
+    (void)size_4.load(std::memory_order_relaxed);
+    (void)size_8.load(std::memory_order_relaxed);
+
+    return 0;
+}
+Performing C++ SOURCE FILE Test HAVE_STDATOMIC_WITH_LIB failed with the following output:
+Change Dir: D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_plus_ImageSeg-Desktop_Qt_6_4_3_MinGW_64_bit-Release/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Qt/Tools/Ninja/ninja.exe cmTC_04fa0 && [1/2] Building CXX object CMakeFiles/cmTC_04fa0.dir/src.cxx.obj
+FAILED: CMakeFiles/cmTC_04fa0.dir/src.cxx.obj 
+C:\Qt\Tools\mingw1120_64\bin\g++.exe -DHAVE_STDATOMIC_WITH_LIB   -o CMakeFiles/cmTC_04fa0.dir/src.cxx.obj -c D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_plus_ImageSeg-Desktop_Qt_6_4_3_MinGW_64_bit-Release/CMakeFiles/CMakeTmp/src.cxx
+Cannot create temporary file in C:\WINDOWS\: Permission denied
+ninja: build stopped: subcommand failed.
+
+
+Source file was:
+#include <atomic>
+#include <cstdint>
+
+int main(int, char **)
+{
+    volatile std::atomic<char>    size_1;
+    volatile std::atomic<short>   size_2;
+    volatile std::atomic<int>     size_4;
+    volatile std::atomic<int64_t> size_8;
+
+    ++size_1;
+    ++size_2;
+    ++size_4;
+    ++size_8;
+
+    (void)size_1.load(std::memory_order_relaxed);
+    (void)size_2.load(std::memory_order_relaxed);
+    (void)size_4.load(std::memory_order_relaxed);
+    (void)size_8.load(std::memory_order_relaxed);
+
+    return 0;
+}
+Performing C++ SOURCE FILE Test CMAKE_HAVE_LIBC_PTHREAD failed with the following output:
+Change Dir: D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_plus_ImageSeg-Desktop_Qt_6_4_3_MinGW_64_bit-Release/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Qt/Tools/Ninja/ninja.exe cmTC_0ed6c && [1/2 56.6/sec] Building CXX object CMakeFiles/cmTC_0ed6c.dir/src.cxx.obj
+FAILED: CMakeFiles/cmTC_0ed6c.dir/src.cxx.obj 
+C:\Qt\Tools\mingw1120_64\bin\g++.exe -DCMAKE_HAVE_LIBC_PTHREAD   -o CMakeFiles/cmTC_0ed6c.dir/src.cxx.obj -c D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_plus_ImageSeg-Desktop_Qt_6_4_3_MinGW_64_bit-Release/CMakeFiles/CMakeTmp/src.cxx
+Cannot create temporary file in C:\WINDOWS\: Permission denied
+ninja: build stopped: subcommand failed.
+
+
+Source file was:
+#include <pthread.h>
+
+static void* test_func(void* data)
+{
+  return data;
+}
+
+int main(void)
+{
+  pthread_t thread;
+  pthread_create(&thread, NULL, test_func, NULL);
+  pthread_detach(thread);
+  pthread_cancel(thread);
+  pthread_join(thread, NULL);
+  pthread_atfork(NULL, NULL, NULL);
+  pthread_exit(NULL);
+
+  return 0;
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_plus_ImageSeg-Desktop_Qt_6_4_3_MinGW_64_bit-Release/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Qt/Tools/Ninja/ninja.exe cmTC_fd66a && [1/2 59.2/sec] Building CXX object CMakeFiles/cmTC_fd66a.dir/CheckFunctionExists.cxx.obj
+FAILED: CMakeFiles/cmTC_fd66a.dir/CheckFunctionExists.cxx.obj 
+C:\Qt\Tools\mingw1120_64\bin\g++.exe   -DCHECK_FUNCTION_EXISTS=pthread_create -o CMakeFiles/cmTC_fd66a.dir/CheckFunctionExists.cxx.obj -c D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_plus_ImageSeg-Desktop_Qt_6_4_3_MinGW_64_bit-Release/CMakeFiles/CheckLibraryExists/CheckFunctionExists.cxx
+Cannot create temporary file in C:\WINDOWS\: Permission denied
+ninja: build stopped: subcommand failed.
+
+
+
+Determining if the function pthread_create exists in the pthread failed with the following output:
+Change Dir: D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_plus_ImageSeg-Desktop_Qt_6_4_3_MinGW_64_bit-Release/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Qt/Tools/Ninja/ninja.exe cmTC_8fdd4 && [1/2 66.4/sec] Building CXX object CMakeFiles/cmTC_8fdd4.dir/CheckFunctionExists.cxx.obj
+FAILED: CMakeFiles/cmTC_8fdd4.dir/CheckFunctionExists.cxx.obj 
+C:\Qt\Tools\mingw1120_64\bin\g++.exe   -DCHECK_FUNCTION_EXISTS=pthread_create -o CMakeFiles/cmTC_8fdd4.dir/CheckFunctionExists.cxx.obj -c D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_plus_ImageSeg-Desktop_Qt_6_4_3_MinGW_64_bit-Release/CMakeFiles/CheckLibraryExists/CheckFunctionExists.cxx
+Cannot create temporary file in C:\WINDOWS\: Permission denied
+ninja: build stopped: subcommand failed.
+
+
+
+Performing C++ SOURCE FILE Test HAVE_STDATOMIC failed with the following output:
+Change Dir: D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_plus_ImageSeg-Desktop_Qt_6_4_3_MinGW_64_bit-Release/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Qt/Tools/Ninja/ninja.exe cmTC_bfc8e && [1/2 74.4/sec] Building CXX object CMakeFiles/cmTC_bfc8e.dir/src.cxx.obj
+FAILED: CMakeFiles/cmTC_bfc8e.dir/src.cxx.obj 
+C:\Qt\Tools\mingw1120_64\bin\g++.exe -DHAVE_STDATOMIC   -o CMakeFiles/cmTC_bfc8e.dir/src.cxx.obj -c D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_plus_ImageSeg-Desktop_Qt_6_4_3_MinGW_64_bit-Release/CMakeFiles/CMakeTmp/src.cxx
+Cannot create temporary file in C:\WINDOWS\: Permission denied
+ninja: build stopped: subcommand failed.
+
+
+Source file was:
+#include <atomic>
+#include <cstdint>
+
+int main(int, char **)
+{
+    volatile std::atomic<char>    size_1;
+    volatile std::atomic<short>   size_2;
+    volatile std::atomic<int>     size_4;
+    volatile std::atomic<int64_t> size_8;
+
+    ++size_1;
+    ++size_2;
+    ++size_4;
+    ++size_8;
+
+    (void)size_1.load(std::memory_order_relaxed);
+    (void)size_2.load(std::memory_order_relaxed);
+    (void)size_4.load(std::memory_order_relaxed);
+    (void)size_8.load(std::memory_order_relaxed);
+
+    return 0;
+}
+Performing C++ SOURCE FILE Test HAVE_STDATOMIC_WITH_LIB failed with the following output:
+Change Dir: D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_plus_ImageSeg-Desktop_Qt_6_4_3_MinGW_64_bit-Release/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Qt/Tools/Ninja/ninja.exe cmTC_94f64 && [1/2 43.1/sec] Building CXX object CMakeFiles/cmTC_94f64.dir/src.cxx.obj
+FAILED: CMakeFiles/cmTC_94f64.dir/src.cxx.obj 
+C:\Qt\Tools\mingw1120_64\bin\g++.exe -DHAVE_STDATOMIC_WITH_LIB   -o CMakeFiles/cmTC_94f64.dir/src.cxx.obj -c D:/cpp_qt_work/ultrasound_processing/Cpp_qt_ultrasound_processing_cmake/build-basic_plus_ImageSeg-Desktop_Qt_6_4_3_MinGW_64_bit-Release/CMakeFiles/CMakeTmp/src.cxx
+Cannot create temporary file in C:\WINDOWS\: Permission denied
+ninja: build stopped: subcommand failed.
+
+
+Source file was:
+#include <atomic>
+#include <cstdint>
+
+int main(int, char **)
+{
+    volatile std::atomic<char>    size_1;
+    volatile std::atomic<short>   size_2;
+    volatile std::atomic<int>     size_4;
+    volatile std::atomic<int64_t> size_8;
+
+    ++size_1;
+    ++size_2;
+    ++size_4;
+    ++size_8;
+
+    (void)size_1.load(std::memory_order_relaxed);
+    (void)size_2.load(std::memory_order_relaxed);
+    (void)size_4.load(std::memory_order_relaxed);
+    (void)size_8.load(std::memory_order_relaxed);
+
+    return 0;
+}
