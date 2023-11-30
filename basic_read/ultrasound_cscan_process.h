@@ -39,7 +39,7 @@ private slots:
 
     // in "handleButton_surface"
     void handleButton_plotsurface();
-    void handleButton_alignsurface();
+    void handleButton_alignsurface(int min_idx);
 
     // manipulate the dataset
     void handleButton_trim();
@@ -65,7 +65,7 @@ private:
     QPushButton *myButton_surface;
 
     QPushButton* myButton_plotsurface = nullptr;
-    QPushButton* myButton_alignsurface = nullptr;
+    QPushButton* myButton_alignsurface;
 
     QPushButton* myButton_addNoise=nullptr;
     QLineEdit* snrInput=nullptr;

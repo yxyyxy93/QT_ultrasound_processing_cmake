@@ -29,6 +29,7 @@ ultrasound_Cscan_process::ultrasound_Cscan_process(QWidget *parent,
     , fx(fx)
     , fy(fy)
     , customPlot_Ascan(nullptr)
+    , myButton_alignsurface(nullptr)
 {
     this->layout = new QVBoxLayout(this);
     // Set the QVBoxLayout as the main layout of the widget
@@ -470,9 +471,12 @@ void ultrasound_Cscan_process::handleButton_surface()
     if (!this->myButton_alignsurface) { // Assuming myButton_alignsurface is declared in the header
         this->myButton_alignsurface = new QPushButton(tr("Align front surface"), this);
         this->layout->addWidget(myButton_alignsurface);
+        int min_idx = 50; // manual setting
         connect(myButton_alignsurface,
-                &QPushButton::clicked, this,
-                &ultrasound_Cscan_process::handleButton_alignsurface);
+                &QPushButton::clicked,
+                this,
+                [this, min_idx]() {handleButton_alignsurface(min_idx);}
+                );
     }
 
     // dynamic memory management
@@ -480,17 +484,7 @@ void ultrasound_Cscan_process::handleButton_surface()
     this->pushButtons.append(myButton_alignsurface);
 }
 
-void ultrasound_Cscan_process::handleButton_alignsurface(){
-    // get min of the front surface index
-    int min_idx = this->C_scan_AS[0][0].size();
-    for(int i = 0; i < this->Front_surface_idx.size(); i++) {
-        for(int j = 0; j < this->Front_surface_idx[i].size(); j++) {
-            min_idx = (min_idx>=this->Front_surface_idx[i][j])?
-                          this->Front_surface_idx[i][j]:min_idx;
-        }
-    }
-    min_idx = 500; // manual setting !!!!!!!!
-    qDebug() << min_idx;
+void ultrasound_Cscan_process::handleButton_alignsurface(int min_idx){
     // shift
     for(int i = 0; i < this->Front_surface_idx.size(); i++){
         for(int j = 0; j < this->Front_surface_idx[i].size(); j++){
@@ -984,6 +978,8 @@ void ultrasound_Cscan_process::onCustomPlotClicked_Cscan(QMouseEvent* event)
         if (this->customPlot_Ascan==nullptr){
             this->customPlot_Ascan = new QCustomPlot();
             this->layout->addWidget(this->customPlot_Ascan);
+            // dynamic memory management
+            this->customPlots.append(this->customPlot_Ascan);
         }
         else
             this->customPlot_Ascan->clearGraphs();
@@ -1019,8 +1015,6 @@ void ultrasound_Cscan_process::onCustomPlotClicked_Cscan(QMouseEvent* event)
         this->customPlot_Ascan->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
         this->customPlot_Ascan->replot();
     }
-    // dynamic memory management
-    this->customPlots.append(this->customPlot_Ascan);
 }
 
 void ultrasound_Cscan_process::addNewWidgetAndReorderLayout(QWidget* newWidget) {

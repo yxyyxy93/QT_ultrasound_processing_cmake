@@ -323,8 +323,11 @@ double snrDbToLinear(double snrDb) {
 }
 void addGaussianNoise(QVector<double>& signal, double snrDb) {
     double snrLinear = snrDbToLinear(snrDb);
+    double mean = std::accumulate(signal.begin(), signal.end(), 0.0) / signal.size();
     double signalPower = std::accumulate(signal.begin(), signal.end(), 0.0,
-                                         [](double sum, double value) { return sum + value * value; }) / signal.size();
+                                         [mean](double sum, double value) {
+                                             return sum + (value - mean) * (value - mean);
+                                         }) / signal.size();
     double noisePower = signalPower / snrLinear;
 
     std::random_device rd;

@@ -23,7 +23,6 @@ ultrasound_cscan_seg::ultrasound_cscan_seg(QWidget *parent,
     QTabWidget *tabWidget = new QTabWidget();
     // ********************* First page
     tabWidget->addTab(this, "Simple C-scan check 1");
-
     // ******************** 2nd page
     QWidget *page2 = new QWidget();
     this->layout2 = new QVBoxLayout(page2);
@@ -449,7 +448,15 @@ void ultrasound_cscan_seg::processFolder(const QString &path) {
                 fillNanWithNearestNeighbors(this->C_scan_double);
                 // align the surface
                 ultrasound_Cscan_process::calculateSurface();
-//                ultrasound_Cscan_process::handleButton_alignsurface();
+                // read downsample ratio
+                bool ok_ds;
+                int downsampleRate = this->downsampleRateInput->text().toInt(&ok_ds);
+                if (!ok_ds || downsampleRate <= 0) {
+                    // Handle error: invalid input
+                    return;
+                }
+                int min_idx = 50*downsampleRate; // manual setting, times the ds factor
+                ultrasound_Cscan_process::handleButton_alignsurface(min_idx);
                 // save
                 this->handleButton_multiSNR();
             }
