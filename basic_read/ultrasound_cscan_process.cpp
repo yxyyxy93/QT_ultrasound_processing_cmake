@@ -123,23 +123,6 @@ void ultrasound_Cscan_process::handleButton_load()
     qDebug() << this->C_scan_double.size();
     qDebug() << this->C_scan_double[0].size();
     qDebug() << this->C_scan_double[0][0].size();
-    // fill nan
-    fillNanWithNearestNeighbors(this->C_scan_double);
-    QVector<std::complex<double>> Ascan_as;
-    QVector<QVector<std::complex<double>>> Bscan_as;
-    // calculate C_scan_AS
-    for(int i = 0; i < this->C_scan_double.size(); i++) {
-        for(int j = 0; j < this->C_scan_double[i].size(); j++) {
-            QVector<double> Ascan = this->C_scan_double[i][j];
-            Ascan_as = analyticSignal(Ascan);
-            Bscan_as.push_back(Ascan_as);
-        }
-        this->m_progressBar->setValue(100 * i / this->C_scan_double.size());
-        // Update the progress bar
-        QCoreApplication::processEvents(); // Allow GUI updates
-        this->C_scan_AS.push_back(Bscan_as);
-        Bscan_as.clear();
-    }
     this->m_progressBar->setValue(100);
     // add a button to trim the dataset
     if (!widgetExistsInLayout<QPushButton>(this->layout, "myButton_trim")) {
@@ -399,6 +382,23 @@ void ultrasound_Cscan_process::processFile(const QFileInfo &fileInfo) {
     } else {
         qDebug() << "The file type is unknown";
     }
+    // fill nan
+    fillNanWithNearestNeighbors(this->C_scan_double);
+    QVector<std::complex<double>> Ascan_as;
+    QVector<QVector<std::complex<double>>> Bscan_as;
+    // calculate C_scan_AS
+    for(int i = 0; i < this->C_scan_double.size(); i++) {
+        for(int j = 0; j < this->C_scan_double[i].size(); j++) {
+            QVector<double> Ascan = this->C_scan_double[i][j];
+            Ascan_as = analyticSignal(Ascan);
+            Bscan_as.push_back(Ascan_as);
+        }
+        this->m_progressBar->setValue(100 * i / this->C_scan_double.size());
+        // Update the progress bar
+        QCoreApplication::processEvents(); // Allow GUI updates
+        this->C_scan_AS.push_back(Bscan_as);
+        Bscan_as.clear();
+    }
 }
 
 // manipulate dataset
@@ -454,7 +454,6 @@ void ultrasound_Cscan_process::handleButton_addNoise(){
 void ultrasound_Cscan_process::handleButton_surface()
 {
     this->calculateSurface();
-
     this->m_progressBar->setValue(100);
     // add a Qlabel
     this->myButton_surface ->setText("Determine the surface (Surface found!)");
@@ -467,21 +466,20 @@ void ultrasound_Cscan_process::handleButton_surface()
         connect(this->myButton_plotsurface,
                 &QPushButton::clicked, this,
                 &ultrasound_Cscan_process::handleButton_plotsurface);
+        // dynamic memory management
+        this->pushButtons.append(myButton_plotsurface);
     }
     if (!this->myButton_alignsurface) { // Assuming myButton_alignsurface is declared in the header
         this->myButton_alignsurface = new QPushButton(tr("Align front surface"), this);
         this->layout->addWidget(myButton_alignsurface);
-        int min_idx = 50; // manual setting
+        int min_idx = 100; // manual setting
         connect(myButton_alignsurface,
                 &QPushButton::clicked,
                 this,
                 [this, min_idx]() {handleButton_alignsurface(min_idx);}
                 );
+        this->pushButtons.append(myButton_alignsurface);
     }
-
-    // dynamic memory management
-    this->pushButtons.append(myButton_plotsurface);
-    this->pushButtons.append(myButton_alignsurface);
 }
 
 void ultrasound_Cscan_process::handleButton_alignsurface(int min_idx){
@@ -489,7 +487,7 @@ void ultrasound_Cscan_process::handleButton_alignsurface(int min_idx){
     for(int i = 0; i < this->Front_surface_idx.size(); i++){
         for(int j = 0; j < this->Front_surface_idx[i].size(); j++){
             int front_idx = this->Front_surface_idx[i][j];
-            // qDebug() << front_idx;
+//            qDebug() << front_idx;
             shiftVector_1D(this->C_scan_AS[i][j],
                            front_idx-min_idx);
             shiftVector_1D(this->C_scan_double[i][j],
@@ -596,7 +594,7 @@ void ultrasound_Cscan_process::calculateSurface() {
     QVector<double> Front_surface_val_i;
     // I set this threshold to avoid the bug in simulation data: finding the second echo as max.
     int prevMaxIndex = 0;  // Initial value, adjust based on your data requirements
-    int threshold = 600; // threshold for the max index
+    int threshold = 700; // threshold for the max index
     for (int i = 0; i < this->C_scan_AS.size(); i++) {
         for (int j = 0; j < this->C_scan_AS[i].size(); j++) {
             QVector<std::complex<double>> Ascan_as = this->C_scan_AS[i][j];
@@ -607,6 +605,7 @@ void ultrasound_Cscan_process::calculateSurface() {
 
             int currentIndex = std::distance(Ascan_as.begin(), maxElementIndex);
             if (currentIndex > threshold) {
+                qDebug() << "out of threshold";
                 currentIndex = prevMaxIndex;  // Use the previous value if threshold is exceeded
             } else {
                 prevMaxIndex = currentIndex;  // Update the previous value
@@ -619,6 +618,9 @@ void ultrasound_Cscan_process::calculateSurface() {
         Front_surface_idx_i.clear();
         Front_surface_val_i.clear();
     }
+    // ******** 2D median filter
+    int filterSize(5);
+    this->Front_surface_idx = applyMedianFilter(this->Front_surface_idx, filterSize);
 }
 
 // *************visualization
@@ -657,6 +659,7 @@ void ultrasound_Cscan_process::handleButton_orthoslice() {
                             arg(scrollBarZ->minimum()).arg(scrollBarZ->maximum()).arg(value);
         sBZ_label->setText(labelText);
     });
+
     // Create the combo box and add the selection options
     QComboBox *comboBox = new QComboBox();
     comboBox->addItem("Max");
@@ -932,8 +935,8 @@ void ultrasound_Cscan_process::updatePlot() {
     this->customPlot2->yAxis->setRange(0, z_size);
     this->customPlot3->xAxis->setRange(0, x_size);
     this->customPlot3->yAxis->setRange(0, y_size);
-    //    // Allow user to drag axis ranges with mouse, zoom with mouse wheel and select graphs by clicking:
-    //    this->customPlot3->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
+    // Allow user to drag axis ranges with mouse, zoom with mouse wheel and select graphs by clicking:
+    this->customPlot3->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
     // Call replot() to update the plot with the new data
     this->customPlot1->replot();
     this->customPlot2->replot();
@@ -1085,6 +1088,9 @@ void ultrasound_Cscan_process::clearAllDynamicMemory() {
 
     for (QPushButton *pushButton : pushButtons) {
         delete pushButton;
+        // for "if *==nullpter" checking
+        this->myButton_alignsurface = nullptr;
+        this->myButton_plotsurface = nullptr;
     }
     pushButtons.clear();
 

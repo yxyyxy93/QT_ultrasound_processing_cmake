@@ -285,6 +285,23 @@ QVector<QVector<QVector<double>>> abs(const QVector<QVector<QVector<std::complex
 
     return result;
 }
+QVector<QVector<QVector<double>>> phase(const QVector<QVector<QVector<std::complex<double>>>>& v){
+    int numRows = v.size();
+    int numCols = v[0].size();
+    int numdeps = v[0][0].size();
+
+    QVector<QVector<QVector<double>>> result(numRows, QVector<QVector<double>>(numCols, QVector<double>(numdeps)));
+
+    for (int i = 0; i < numRows; i++) {
+        for (int j = 0; j < numCols; j++) {
+            for (int q = 0; q < numdeps; q++){
+                 result[i][j][q] = atan2(v[i][j][q].imag(), v[i][j][q].real());
+            }
+        }
+    }
+
+    return result;
+}
 
 // calculate statistics
 QMap<int, int> calculateHistogram(const QVector<double>& data, int numBins)
@@ -330,12 +347,26 @@ void addGaussianNoise(QVector<double>& signal, double snrDb) {
                                          }) / signal.size();
     double noisePower = signalPower / snrLinear;
 
-    std::random_device rd;
-    std::mt19937 gen(rd());
+    std::mt19937 gen(1); // Use the provided seed;
     std::normal_distribution<> d(0, std::sqrt(noisePower));
 
     for (auto& value : signal) {
         value += d(gen);
+    }
+}
+void addGaussianNoiseToComplex(QVector<std::complex<double>>& signal, double snrDb) {
+    double snrLinear = snrDbToLinear(snrDb);
+    double signalPower = std::accumulate(signal.begin(), signal.end(), 0.0,
+                                         [](double sum, const std::complex<double>& value) {
+                                             return sum + std::norm(value);
+                                         }) / signal.size();
+    double noisePower = signalPower / snrLinear;
+
+    std::mt19937 gen(1); // Use the provided seed
+    std::normal_distribution<> d(0, std::sqrt(noisePower / 2)); // Divide by 2 to distribute power equally between real and imaginary parts
+
+    for (auto& value : signal) {
+        value += std::complex<double>(d(gen), d(gen));
     }
 }
 
@@ -369,6 +400,44 @@ void printLayoutInfo(QLayout *layout) {
         }
         qDebug() << "================================";
     }
+}
+
+// ************** image processing
+QVector<QVector<double>> applyMedianFilter(const QVector<QVector<double>>& image, int filterSize) {
+    int rows = image.size();
+    if (rows == 0) return image;
+    int cols = image[0].size();
+
+    QVector<QVector<double>> filteredImage = image; // Copy original image
+
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            QVector<double> neighbors;
+
+            // Collect neighbors
+            for (int fi = -filterSize / 2; fi <= filterSize / 2; ++fi) {
+                for (int fj = -filterSize / 2; fj <= filterSize / 2; ++fj) {
+                    int ni = i + fi;
+                    int nj = j + fj;
+
+                    // Handle borders (replicate edge pixels)
+                    ni = qMax(0, qMin(ni, rows - 1));
+                    nj = qMax(0, qMin(nj, cols - 1));
+
+                    neighbors.push_back(image[ni][nj]);
+                }
+            }
+
+            // Find the median
+            std::nth_element(neighbors.begin(), neighbors.begin() + neighbors.size() / 2, neighbors.end());
+            double median = neighbors[neighbors.size() / 2];
+
+            // Replace the pixel value
+            filteredImage[i][j] = median;
+        }
+    }
+
+    return filteredImage;
 }
 
 // **************** fill in nan

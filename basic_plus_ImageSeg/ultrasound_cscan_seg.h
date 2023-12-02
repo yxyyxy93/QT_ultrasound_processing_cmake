@@ -73,11 +73,11 @@ private:
     QLineEdit* multisnrInput;
     QLineEdit* downsampleRateInput;
     QLineEdit* cropSignalInput;
+    QComboBox* myComboBox_savepattern;
 
     QLabel *folderLabel;
     void processFolder(const QString &path);
     void readCropValues(int& start, int& end);
-
 };
 #endif // ULTRASOUND_CSCAN_SEG_H
 

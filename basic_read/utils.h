@@ -22,7 +22,14 @@ void ifft(QVector<std::complex<double>>& signal);
 // surface align utils
 template <class T>
 void shiftVector_1D(QVector<T>& signal, int k){
-    for (int i=0; i<k; ++i){
+    int n = signal.size();
+    if (n == 0) return; // Handle empty vector case
+    // Normalize k to avoid unnecessary rotations
+    k = k % n;
+    if (k < 0) {
+        k += n; // Convert negative k to equivalent positive shift
+    }
+    for (int i = 0; i < k; ++i){
         signal.append(signal.takeFirst());
     }
 }
@@ -88,6 +95,7 @@ QVector<T> downsampleVector(const QVector<T>& original, int rate)
 
 // define operators for qvector of complex
 QVector<QVector<QVector<double>>> abs(const QVector<QVector<QVector<std::complex<double>>>>& v);
+QVector<QVector<QVector<double>>> phase(const QVector<QVector<QVector<std::complex<double>>>>& v);
 
 // calculate statistics
 QMap<int, int> calculateHistogram(const QVector<double>& data, int numBins);
@@ -99,6 +107,7 @@ double generateNoise(double amplitude);
 void addNoiseToVector(std::vector<double>& vec, double amplitude);
 double snrDbToLinear(double snrDb);
 void addGaussianNoise(QVector<double>& signal, double snrDb);
+void addGaussianNoiseToComplex(QVector<std::complex<double>>& signal, double snrDb);
 
 template <typename T>
 bool widgetExistsInLayout(QLayout* layout, const QString& propertyValue, const QString& propertyName = QString()) {
@@ -122,6 +131,9 @@ bool widgetExistsInLayout(QLayout* layout, const QString& propertyValue, const Q
 // ************** debug
 void printWidgetInfo(QWidget *widget);
 void printLayoutInfo(QLayout *layout);
+
+// ********** image processing
+QVector<QVector<double>> applyMedianFilter(const QVector<QVector<double>>& image, int filterSize);
 
 // ********** fill nan
 // Check if a value is NaN

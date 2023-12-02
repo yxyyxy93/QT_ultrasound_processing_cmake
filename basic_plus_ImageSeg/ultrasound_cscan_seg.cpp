@@ -86,6 +86,20 @@ ultrasound_cscan_seg::ultrasound_cscan_seg(QWidget *parent,
         this->cropSignalInput->setPlaceholderText("Enter crop values (start, end)");
         this->layout3->addWidget(this->cropSignalInput);
     }
+    // Check the ComboBox to choose the signal to save
+    if (!widgetExistsInLayout<QComboBox>(this->layout3, "myComboBox_savepattern")) {
+        // Create the ComboBox
+        this->myComboBox_savepattern = new QComboBox(page3);
+        this->myComboBox_savepattern->setObjectName("myComboBox_savepattern"); // Assign unique object name
+        // Add items to the ComboBox
+        this->myComboBox_savepattern->addItem("origin");
+        this->myComboBox_savepattern->addItem("Inst_amplitude");
+        this->myComboBox_savepattern->addItem("Inst_phase");
+        // Add the ComboBox to the layout
+        this->layout3->addWidget(this->myComboBox_savepattern);
+        // Optional: Connect the ComboBox signal to a slot
+        // connect(myComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(yourSlotFunction(int)));
+    }
 }
 
 // ************* 2D analytic-signal and visualization
@@ -349,30 +363,46 @@ void ultrasound_cscan_seg::handleButton_multiSNR() {
         qDebug() << "Invalid cropping range. Start should be less than End.";
         return;
     }
+    QString filename = this->fn;
+    // Remove '.csv' from the base name
+    int dotIndex = filename.indexOf('.'); // Find the index of the first dot
+    if (dotIndex != -1) { // Check if a dot was found
+        filename = filename.left(dotIndex);
+        // Use modifiedString as needed
+    } else {
+        // Handle the case where there's no dot in the string
+    }
+    // Create the directory
+    QDir dir(filename); // Set the directory to 'filename'
+    if (!dir.exists()) {
+        if (!dir.mkpath(".")) { // Create the directory if it doesn't exist
+            qWarning() << "Could not create directory:" << filename;
+            return;
+        } else {
+            qDebug() << "Directory created:" << filename;
+        }
+    }
+    // Check and delete files in the directory
+    QStringList files = dir.entryList(QDir::Files);
+    for (const QString &file : files) {
+        if (!dir.remove(file)) {
+            qWarning() << "Could not delete file:" << file;
+        } else {
+            qDebug() << "File deleted:" << file;
+        }
+    }
+    // check the saving patterns
+    int selectedIndex = this->myComboBox_savepattern->currentIndex();
+    QString selectedOption = this->myComboBox_savepattern->itemText(selectedIndex);
     if (SNRInput) {
         QStringList snrValuesStr = SNRInput->text().split(',');
         foreach (const QString &snrStr, snrValuesStr) {  // Process each SNR value
             bool ok;
             double snrDb = snrStr.trimmed().toDouble(&ok);
             if (ok) {
-                QString filename = this->fn;
-                // Remove '.csv' from the base name
-                int dotIndex = filename.indexOf('.'); // Find the index of the first dot
-                if (dotIndex != -1) { // Check if a dot was found
-                    filename = filename.left(dotIndex);
-                    // Use modifiedString as needed
-                } else {
-                    // Handle the case where there's no dot in the string
-                }
-                // Create the directory
-                QDir dir;
-                if (!dir.mkpath(filename)) {
-                    qWarning() << "Could not create directory:" << filename;
-                } else {
-                    qDebug() << "Directory created:" << filename;
-                }
+                // Add the ComboBox to the layout
                 // Create the new filename by appending the double value
-                QString newFileName = filename + "/_snr_" + QString::number(snrDb, 'f', 2) + ".csv"; // 'f': fixed-point notation, '2': two decimal places
+                QString newFileName = filename + "/_snr_" + QString::number(snrDb, 'f', 2) + "_" + selectedOption + ".csv"; // 'f': fixed-point notation, '2': two decimal places
                 qDebug() << "New file path:" << newFileName;
                 QFile file(newFileName);
                 if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -381,9 +411,9 @@ void ultrasound_cscan_seg::handleButton_multiSNR() {
                 }
                 QTextStream out(&file);
                 // Write dimensions as the first line
-                if (!this->C_scan_double.isEmpty() && !this->C_scan_double[0].isEmpty()) {
-                    int x = this->C_scan_double.size();
-                    int y = this->C_scan_double[0].size();
+                if (!this->C_scan_AS.isEmpty() && !this->C_scan_AS[0].isEmpty()) {
+                    int x = this->C_scan_AS.size();
+                    int y = this->C_scan_AS[0].size();
                     int z = endValue-startValue+1;
                     out << x << "," << y << "," << z << "\n";
                 } else {
@@ -391,20 +421,29 @@ void ultrasound_cscan_seg::handleButton_multiSNR() {
                     file.close();
                     return;
                 }
-                for (int i = 0; i < this->C_scan_double.size(); i++) {
-                    for (int j = 0; j < this->C_scan_double[i].size(); j++) {
-                        QVector<double> Ascan = this->C_scan_double[i][j]; // avoid too small value
-                        addGaussianNoise(Ascan, snrDb);
-                        QVector<double> Ascan_ds = downsampleVector(Ascan, downsampleRate);
+                for (int i = 0; i < this->C_scan_AS.size(); i++) {
+                    for (int j = 0; j < this->C_scan_AS[i].size(); j++) {
+                        QVector<std::complex<double>> Ascan = this->C_scan_AS[i][j];
+                        addGaussianNoiseToComplex(Ascan, snrDb);
+                        QVector<std::complex<double>> Ascan_ds = downsampleVector(Ascan, downsampleRate);
                         QStringList values;
                         for (int k = startValue; k <= endValue; ++k) {
-                            values << QString::number(1e10*Ascan_ds[k]);
-                            if (std::isnan(1e10*Ascan_ds[k]))
-                                qDebug() << "nan at: " << k;
+                            if (selectedIndex == 0) {
+                                values << QString::number(1e10*Ascan_ds[k].real());
+                            }
+                            else if (selectedIndex == 1) {
+                                values << QString::number(1e10*abs(Ascan_ds[k]));
+                            }
+                            else if (selectedIndex == 2) {
+                                values << QString::number(atan2(Ascan_ds[k].imag(), Ascan_ds[k].real()));
+                            }
+                            else {
+                                qDebug() << "Unknown option selected";
+                            }
                         }
                         out << values.join(',') << "\n";
                     }
-                    this->progressBarPage3->setValue(100 * i / this->C_scan_double.size());
+                    this->progressBarPage3->setValue(100 * i / this->C_scan_AS.size());
                     // Update the progress bar
                     QCoreApplication::processEvents(); // Allow GUI updates
                 }
@@ -431,7 +470,6 @@ void ultrasound_cscan_seg::processFolder(const QString &path) {
     QDir dir(path);
     // Get the list of all directories and files, excluding '.' and '..'
     QFileInfoList list = dir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot, QDir::DirsFirst);
-
     for (const QFileInfo &fileInfo : list) {
         if (fileInfo.isDir()) {
             // Process only the first-level subdirectories
@@ -444,8 +482,7 @@ void ultrasound_cscan_seg::processFolder(const QString &path) {
                 QFileInfo fileInfo(this->fn);
                 this->C_scan_double.clear();
                 this->C_scan_AS.clear();
-                this->processFile(fileInfo);
-                fillNanWithNearestNeighbors(this->C_scan_double);
+                ultrasound_Cscan_process::processFile(fileInfo);
                 // align the surface
                 ultrasound_Cscan_process::calculateSurface();
                 // read downsample ratio
@@ -455,7 +492,7 @@ void ultrasound_cscan_seg::processFolder(const QString &path) {
                     // Handle error: invalid input
                     return;
                 }
-                int min_idx = 50*downsampleRate; // manual setting, times the ds factor
+                int min_idx = 100*downsampleRate; // manual setting, times the ds factor
                 ultrasound_Cscan_process::handleButton_alignsurface(min_idx);
                 // save
                 this->handleButton_multiSNR();
