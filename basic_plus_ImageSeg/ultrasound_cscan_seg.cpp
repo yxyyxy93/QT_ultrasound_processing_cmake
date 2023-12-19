@@ -484,7 +484,7 @@ void ultrasound_cscan_seg::processFolder(const QString &path) {
                 this->C_scan_AS.clear();
                 ultrasound_Cscan_process::processFile(fileInfo);
                 // align the surface
-                ultrasound_Cscan_process::calculateSurface();
+//                ultrasound_Cscan_process::calculateSurface();
                 // read downsample ratio
                 bool ok_ds;
                 int downsampleRate = this->downsampleRateInput->text().toInt(&ok_ds);
@@ -492,8 +492,8 @@ void ultrasound_cscan_seg::processFolder(const QString &path) {
                     // Handle error: invalid input
                     return;
                 }
-                int min_idx = 100*downsampleRate; // manual setting, times the ds factor
-                ultrasound_Cscan_process::handleButton_alignsurface(min_idx);
+//                int min_idx = 100*downsampleRate; // manual setting, times the ds factor
+//                ultrasound_Cscan_process::handleButton_alignsurface(min_idx);
                 // save
                 this->handleButton_multiSNR();
             }

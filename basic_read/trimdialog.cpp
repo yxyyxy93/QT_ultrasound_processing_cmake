@@ -17,12 +17,12 @@ TrimDialog::TrimDialog(QWidget *parent) : QDialog(parent) {
     endKSpinBox = new QSpinBox(this);
 
     // Set some reasonable maximum values for the spin boxes
-    startISpinBox->setMaximum(1000);
-    endISpinBox->setMaximum(1000);
-    startJSpinBox->setMaximum(1000);
-    endJSpinBox->setMaximum(1000);
-    startKSpinBox->setMaximum(1000);
-    endKSpinBox->setMaximum(10000);
+    startISpinBox->setMaximum(5000);
+    endISpinBox->setMaximum(5000);
+    startJSpinBox->setMaximum(5000);
+    endJSpinBox->setMaximum(5000);
+    startKSpinBox->setMaximum(5000);
+    endKSpinBox->setMaximum(50000);
 
     // Add the spin boxes to the layout
     layout->addRow("Start I", startISpinBox);

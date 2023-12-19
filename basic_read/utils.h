@@ -8,6 +8,7 @@
 #include <qdebug.h>
 #include <QLayout>
 #include <random>
+#include <Eigen/Dense>
 
 typedef QVector<double> Array1D;
 typedef QVector<Array1D> Array2D;
@@ -78,6 +79,7 @@ QVector<QVector<QVector<T>>> trim3DData(const QVector<QVector<QVector<T>>>& data
     qDebug() << "data trimed";
     return trimmedData;
 };
+
 template<typename T>
 QVector<T> downsampleVector(const QVector<T>& original, int rate)
 {
@@ -134,6 +136,7 @@ void printLayoutInfo(QLayout *layout);
 
 // ********** image processing
 QVector<QVector<double>> applyMedianFilter(const QVector<QVector<double>>& image, int filterSize);
+QVector<QVector<double>> createGaussianKernel(int kernelSize, double sigma);
 
 // ********** fill nan
 // Check if a value is NaN
@@ -142,3 +145,10 @@ bool isNaN(double value);
 double getAverageOfNeighbors(const QVector<QVector<QVector<double>>>& data, int x, int y, int z);
 // Fill NaN values in a 3D dataset with the average of their nearest neighbors
 void fillNanWithNearestNeighbors(QVector<QVector<QVector<double>>>& data);
+
+// ********************************* surface fitting
+// Function to perform polynomial fitting on a QVector<double>
+// This function returns the coefficients of the fitted polynomial
+Eigen::VectorXd polynomialFit(const QVector<double>& y, int degree);
+// Function to fit a QVector<QVector<double>> to a surface using 1D polynomial
+QVector<QVector<double>> fitSurface(QVector<QVector<double>>& data, int degree);

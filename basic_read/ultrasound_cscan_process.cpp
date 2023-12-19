@@ -145,7 +145,15 @@ void ultrasound_Cscan_process::handleButton_load()
         QLineEdit* snrInput = new QLineEdit(this);
         snrInput->setObjectName("snrInput"); // Assign unique object name
         snrInput->setPlaceholderText("Enter SNR value");
-        this->addNewWidgetAndReorderLayout(snrInput);
+        this->layout->addWidget(snrInput);
+    }
+    // Check if the Polynomial Degree Input Field already exists in the layout
+    if (!widgetExistsInLayout<QLineEdit>(this->layout, "polynomialDegreeInput")) {
+        // Create the Polynomial Degree Input Field
+        QLineEdit* polynomialDegreeInput = new QLineEdit(this);
+        polynomialDegreeInput->setObjectName("polynomialDegreeInput"); // Assign unique object name
+        polynomialDegreeInput->setPlaceholderText("Enter degree of polynomial");
+        this->layout->addWidget(polynomialDegreeInput);
     }
 }
 
@@ -263,6 +271,7 @@ void ultrasound_Cscan_process::processFile(const QFileInfo &fileInfo) {
         int x = dimensions[0].toInt();
         int y = dimensions[1].toInt();
         int z = dimensions[2].toInt();
+        qDebug() << x << y << z;
         // Resize your member 3D QVector based on the dimensions
         this->C_scan_double.resize(x);
         for (int i = 0; i < x; ++i) {
@@ -598,12 +607,17 @@ void ultrasound_Cscan_process::calculateSurface() {
     for (int i = 0; i < this->C_scan_AS.size(); i++) {
         for (int j = 0; j < this->C_scan_AS[i].size(); j++) {
             QVector<std::complex<double>> Ascan_as = this->C_scan_AS[i][j];
-            auto maxElementIndex = std::max_element(Ascan_as.begin(), Ascan_as.end(),
-                                                    [](std::complex<double> a, std::complex<double> b) {
-                                                        return std::abs(a) < std::abs(b);
-                                                    });
-
-            int currentIndex = std::distance(Ascan_as.begin(), maxElementIndex);
+            //            auto maxElementIndex = std::max_element(Ascan_as.begin(), Ascan_as.end(),
+            //                                                    [](std::complex<double> a, std::complex<double> b) {
+            //                                                        return std::abs(a) < std::abs(b);
+            //                                                    });
+            // tailored for exp.
+            double threshold = 0.5;
+            auto maxElementIndex = std::find_if(Ascan_as.begin(), Ascan_as.end(),
+                                                [threshold](std::complex<double> a) {
+                                                    return std::abs(a) > threshold;
+                                                });
+            double currentIndex = std::distance(Ascan_as.begin(), maxElementIndex);
             if (currentIndex > threshold) {
                 qDebug() << "out of threshold";
                 currentIndex = prevMaxIndex;  // Use the previous value if threshold is exceeded
@@ -618,9 +632,17 @@ void ultrasound_Cscan_process::calculateSurface() {
         Front_surface_idx_i.clear();
         Front_surface_val_i.clear();
     }
-    // ******** 2D median filter
-    int filterSize(5);
-    this->Front_surface_idx = applyMedianFilter(this->Front_surface_idx, filterSize);
+    // ******** 2D median filter or fitting
+    QLineEdit* polynomialDegreeInput = this->findChild<QLineEdit*>("polynomialDegreeInput");
+    int degree = 1;
+    if (polynomialDegreeInput) {
+        bool ok;
+        int degree = polynomialDegreeInput->text().toInt(&ok);
+        qDebug() << degree;
+    }
+    // take polynomialDegreeInput as filter size
+    this->Front_surface_idx = applyMedianFilter(this->Front_surface_idx, degree);
+    // this->Front_surface_idx = fitSurface(this->Front_surface_idx, degree);
 }
 
 // *************visualization
@@ -640,7 +662,6 @@ void ultrasound_Cscan_process::handleButton_orthoslice() {
     QLabel *sBY_label = new QLabel();
     QLabel *sBZ_label = new QLabel();
 
-    // ... [Connect signals and slots as before] ...
     // Connect the scrollbar's valueChanged() signal to a slot that updates the label text
     connect(scrollBarX, &QScrollBar::valueChanged, [=](int value) {
         QString labelText = QString("Min: %1 Max: %2 Current: %3").
@@ -855,7 +876,7 @@ void ultrasound_Cscan_process::updatePlot() {
             for (int j = 0; j < y_size; ++j) {
                 double sum = 0;
                 int count = 0;
-                for (int idx = std::max(sliceZ - 20, 0); idx < std::min(sliceZ + 20, z_size); ++idx) {
+                for (int idx = std::max(sliceZ - 5, 0); idx < std::min(sliceZ + 5, z_size); ++idx) {
                     sum += std::abs(this->C_scan_AS[i][j][idx]);
                     ++count;
                 }

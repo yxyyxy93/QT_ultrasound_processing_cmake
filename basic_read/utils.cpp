@@ -439,6 +439,23 @@ QVector<QVector<double>> applyMedianFilter(const QVector<QVector<double>>& image
 
     return filteredImage;
 }
+// Function to create a Gaussian kernel
+QVector<QVector<double>> createGaussianKernel(int kernelSize, double sigma) {
+    QVector<QVector<double>> kernel(kernelSize, QVector<double>(kernelSize));
+    double sum = 0.0;
+    int k = kernelSize / 2;
+    for (int i = -k; i <= k; i++) {
+        for (int j = -k; j <= k; j++) {
+            kernel[i + k][j + k] = exp(-(i * i + j * j) / (2 * sigma * sigma));
+            sum += kernel[i + k][j + k];
+        }
+    }
+    // Normalize the kernel
+    for (int i = 0; i < kernelSize; ++i)
+        for (int j = 0; j < kernelSize; ++j)
+            kernel[i][j] /= sum;
+    return kernel;
+}
 
 // **************** fill in nan
 bool isNaN(double value) {
@@ -484,3 +501,51 @@ void fillNanWithNearestNeighbors(QVector<QVector<QVector<double>>>& data) {
     }
 }
 
+// ********************************* surface fitting
+// Function to perform polynomial fitting on a QVector<double>
+// This function returns the coefficients of the fitted polynomial
+Eigen::VectorXd polynomialFit(const QVector<double>& y, int degree) {
+    int n = y.size();
+    Eigen::MatrixXd X(n, degree + 1);
+    Eigen::VectorXd Y(n);
+
+    for (int i = 0; i < n; ++i) {
+        Y(i) = y[i];
+        double accumulator = 1.0;
+        for (int j = 0; j <= degree; ++j) {
+            X(i, j) = accumulator;
+            accumulator *= i;  // Assuming 'i' as the x-value (0, 1, 2, ...)
+        }
+    }
+
+    // Perform the polynomial fit and return the coefficients
+    return (X.transpose() * X).ldlt().solve(X.transpose() * Y);
+}
+
+// Function to fit a QVector<QVector<double>> to a surface using 1D polynomial
+QVector<QVector<double>> fitSurface(QVector<QVector<double>>& data, int degree) {
+    QVector<QVector<double>> fittedSurface;
+
+    for (const auto& row : data) {
+        QVector<double> rowVec;
+        for (double val : row) {
+            rowVec.push_back(val);
+        }
+
+        Eigen::VectorXd coefficients = polynomialFit(rowVec, degree);
+
+        // Reconstruct the fitted row
+        QVector<double> fittedRow;
+        for (int i = 0; i < row.size(); ++i) {
+            double fittedValue = 0.0;
+            for (int j = 0; j <= degree; ++j) {
+                fittedValue += coefficients[j] * std::pow(i, j);
+            }
+            fittedRow.push_back(fittedValue);
+        }
+
+        fittedSurface.push_back(fittedRow);
+    }
+
+    return fittedSurface;
+}
