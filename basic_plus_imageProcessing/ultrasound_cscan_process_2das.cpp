@@ -948,17 +948,12 @@ void ultrasound_cscan_process_2DAS::onPlot3DButtonClicked() {
     plotDialog->setWindowTitle("3D Plot");
 
     MyOpenGLWidget *openGLWidget = new MyOpenGLWidget(plotDialog);
-
+    openGLWidget->convertStructureToVertices(this->structure);
     QVBoxLayout *layout = new QVBoxLayout(plotDialog);
     layout->addWidget(openGLWidget);
 
     plotDialog->setLayout(layout);
     plotDialog->resize(800, 600); // Set a default size
-
-    // Set the data for the OpenGL widget
-    openGLWidget->setData(this->structure);
-
     plotDialog->show();
 }
-
 

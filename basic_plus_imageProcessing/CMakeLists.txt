@@ -37,7 +37,8 @@ set(HEADER_FILES
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES}
     imageplotwidget.h imageplotwidget.cpp
-    myopenglwidget.h myopenglwidget.cpp)
+    myopenglwidget.h myopenglwidget.cpp
+    vertexShaderSource.cpp)
 target_link_libraries(${PROJECT_NAME} Qt6::Core Qt6::Gui Qt6::Widgets Qt6::PrintSupport
     Qt6::3DCore Qt6::3DRender Qt6::3DInput Qt6::3DExtras Qt6::DataVisualization)
 target_link_libraries(${PROJECT_NAME} Qt6::OpenGL Qt6::OpenGLWidgets)
