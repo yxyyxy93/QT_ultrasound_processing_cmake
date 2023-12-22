@@ -27,14 +27,11 @@ endif()
 add_executable(basic_read
     main.cpp
     npy.hpp
-    qcustomplot.cpp
-    qcustomplot.h
-    trimdialog.cpp
-    trimdialog.h
-    ultrasound_cscan_process.cpp
-    ultrasound_cscan_process.h
-    utils.cpp
-    utils.h)
+    qcustomplot.cpp qcustomplot.h
+    trimdialog.cpp trimdialog.h
+    ultrasound_cscan_process.cpp ultrasound_cscan_process.h
+    utils.cpp utils.h
+    orthosliceviewer.h orthosliceviewer.cpp)
 
 # Include FFTW3 Headers
 target_include_directories(basic_read PRIVATE ${FFTW_INCLUDE_DIR})

@@ -20,6 +20,7 @@ set(SOURCE_FILES
     ../basic_read/ultrasound_cscan_process.cpp
     ../basic_read/utils.cpp
     ../basic_read/qcustomplot.cpp
+    ../basic_read/orthosliceviewer.cpp
 )
 
 set(HEADER_FILES
@@ -31,6 +32,7 @@ set(HEADER_FILES
     ../basic_read/ultrasound_cscan_process.h
     ../basic_read/utils.h
     ../basic_read/qcustomplot.h
+    ../basic_read/orthosliceviewer.h
 )
 
 

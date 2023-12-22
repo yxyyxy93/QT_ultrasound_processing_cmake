@@ -55,42 +55,6 @@ QVector<std::complex<double>> analyticSignal(const QVector<double>& signal)
     return analyticFFT;
 }
 
-void fft(QVector<std::complex<double>>& signal)
-{
-    int N = signal.size();
-
-    // Create a FFTW plan for forward FFT
-    fftw_plan plan = fftw_plan_dft_1d(N, reinterpret_cast<fftw_complex*>(&signal[0]),
-            reinterpret_cast<fftw_complex*>(&signal[0]),
-            FFTW_FORWARD, FFTW_ESTIMATE);
-
-    // Execute the FFTW plan
-    fftw_execute(plan);
-
-    // Destroy the FFTW plan
-    fftw_destroy_plan(plan);
-}
-
-void ifft(QVector<std::complex<double>>& signal)
-{
-    int N = signal.size();
-    // Create a FFTW plan for backward FFT
-    fftw_plan plan = fftw_plan_dft_1d(N, reinterpret_cast<fftw_complex*>(&signal[0]),
-            reinterpret_cast<fftw_complex*>(&signal[0]),
-            FFTW_BACKWARD, FFTW_ESTIMATE);
-
-    // Execute the FFTW plan
-    fftw_execute(plan);
-
-    // Normalize the output of IFFT
-    for (int i = 0; i < N; i++) {
-        signal[i] /= N;
-    }
-
-    // Destroy the FFTW plan
-    fftw_destroy_plan(plan);
-}
-
 // 2d analytic-signal
 // The first order 2D convolution kernels will be calculated by
 double Kernel1(double x, double y, double s)
@@ -548,4 +512,60 @@ QVector<QVector<double>> fitSurface(QVector<QVector<double>>& data, int degree) 
     }
 
     return fittedSurface;
+}
+
+// ********************************** FFT ****************
+QVector<std::complex<double>> applyFFT1D(QVector<double>& data) {
+    QVector<std::complex<double>> output(data.size());
+    fftw_complex* in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * data.size());
+    fftw_complex* out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * data.size());
+    fftw_plan plan = fftw_plan_dft_1d(data.size(), in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+    for (int i = 0; i < data.size(); ++i) {
+        in[i][0] = data[i];
+        in[i][1] = 0.0;
+    }
+    fftw_execute(plan);
+    for (int i = 0; i < data.size(); ++i) {
+        output[i] = std::complex<double>(out[i][0], out[i][1]);
+    }
+    fftw_destroy_plan(plan);
+    fftw_free(in);
+    fftw_free(out);
+    return output;
+}
+
+void fft(QVector<std::complex<double>>& signal)
+{
+    int N = signal.size();
+
+    // Create a FFTW plan for forward FFT
+    fftw_plan plan = fftw_plan_dft_1d(N, reinterpret_cast<fftw_complex*>(&signal[0]),
+                                      reinterpret_cast<fftw_complex*>(&signal[0]),
+                                      FFTW_FORWARD, FFTW_ESTIMATE);
+
+    // Execute the FFTW plan
+    fftw_execute(plan);
+
+    // Destroy the FFTW plan
+    fftw_destroy_plan(plan);
+}
+
+void ifft(QVector<std::complex<double>>& signal)
+{
+    int N = signal.size();
+    // Create a FFTW plan for backward FFT
+    fftw_plan plan = fftw_plan_dft_1d(N, reinterpret_cast<fftw_complex*>(&signal[0]),
+                                      reinterpret_cast<fftw_complex*>(&signal[0]),
+                                      FFTW_BACKWARD, FFTW_ESTIMATE);
+
+    // Execute the FFTW plan
+    fftw_execute(plan);
+
+    // Normalize the output of IFFT
+    for (int i = 0; i < N; i++) {
+        signal[i] /= N;
+    }
+
+    // Destroy the FFTW plan
+    fftw_destroy_plan(plan);
 }

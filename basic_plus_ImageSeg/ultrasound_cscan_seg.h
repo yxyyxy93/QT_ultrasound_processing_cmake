@@ -39,9 +39,12 @@ private slots:
     void onLineDrawn(const QLineF &line);
     void saveImage();
 
-    // slot on page3
+    // slot on page 3
     void handleButton_multiSNR();
     void selectFolder();
+
+    // slot on page 4
+    void handleCalculateFFT();
 
 public slots:
     void closeDrawnArea();
@@ -78,6 +81,9 @@ private:
     QLabel *folderLabel;
     void processFolder(const QString &path);
     void readCropValues(int& start, int& end);
+
+    // functions on page 4
+    QVector<QVector<QVector<std::complex<double>>>> fft3d;
 };
 #endif // ULTRASOUND_CSCAN_SEG_H
 

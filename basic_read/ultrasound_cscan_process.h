@@ -33,9 +33,9 @@ private slots:
     void handleButton_load();
     void handleButton_save();
     // void handleButton_loadraw();
-    void handleButton_orthoslice();
+    // void handleButton_orthoslice();
     void handleButton_surface();
-    void onCustomPlotClicked_Cscan(QMouseEvent* event);
+    // void onCustomPlotClicked_Cscan(QMouseEvent* event);
 
     // in "handleButton_surface"
     void handleButton_plotsurface();
@@ -49,7 +49,7 @@ private slots:
     void clearAllDynamicMemory();
 
     // Cscan setting
-    void updateCscanPlotSelection(int index);
+    // void updateCscanPlotSelection(int index);
 
     // manipulate widgets
     void addNewWidgetAndReorderLayout(QWidget* newWidget);

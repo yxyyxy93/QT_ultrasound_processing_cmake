@@ -152,3 +152,6 @@ void fillNanWithNearestNeighbors(QVector<QVector<QVector<double>>>& data);
 Eigen::VectorXd polynomialFit(const QVector<double>& y, int degree);
 // Function to fit a QVector<QVector<double>> to a surface using 1D polynomial
 QVector<QVector<double>> fitSurface(QVector<QVector<double>>& data, int degree);
+
+// ********************************** FFT ****************
+QVector<std::complex<double>> applyFFT1D(QVector<double>& data);

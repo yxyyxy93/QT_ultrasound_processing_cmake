@@ -11,6 +11,7 @@
 #include <complex>
 #include "JetColorMap.h"
 #include "..\basic_read\utils.h"
+#include "..\basic_read\orthosliceviewer.h"
 
 ultrasound_cscan_seg::ultrasound_cscan_seg(QWidget *parent,
                                            QString fn,
@@ -100,6 +101,28 @@ ultrasound_cscan_seg::ultrasound_cscan_seg(QWidget *parent,
         // Optional: Connect the ComboBox signal to a slot
         // connect(myComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(yourSlotFunction(int)));
     }
+
+    // ******************************* 4th page
+    // Assuming tabWidget is your QTabWidget
+    QWidget *page4 = new QWidget();
+    QVBoxLayout *layout4 = new QVBoxLayout(page4);
+    tabWidget->addTab(page4, "FFT Calculation");
+    // Create the FFT calculation button
+    QPushButton *calculateFFTButton = new QPushButton(tr("Calculate FFT"), page4);
+    QPushButton *plotFFTButton = new QPushButton(tr("Plot FFT"), page4);
+
+    layout4->addWidget(calculateFFTButton);
+    layout4->addWidget(plotFFTButton);
+    // Connect the button's clicked signal to the relevant slot
+    connect(calculateFFTButton, &QPushButton::clicked, this, &ultrasound_cscan_seg::handleCalculateFFT);
+    connect(plotFFTButton, &QPushButton::clicked, this, [this]() {
+        OrthosliceViewer *viewer = new OrthosliceViewer(nullptr,
+                                                        this->fft3d,
+                                                        abs(this->fft3d));
+        viewer->setAttribute(Qt::WA_DeleteOnClose); // Ensure it's deleted on close
+        viewer->show();
+    });
+
 }
 
 // ************* 2D analytic-signal and visualization
@@ -110,8 +133,7 @@ void ultrasound_cscan_seg::handleButton_Cscan() {
     // initialize c_scan_mask
     C_scan_mask = QVector<QVector<QVector<bool>>>(x_size, QVector<QVector<bool>>(y_size, QVector<bool>(z_size, false)));
     qDebug() << x_size << y_size << z_size;
-
-    //    // ****************** create the orthoslice visual
+    //  ****************** create the orthoslice visual
     // Qcustomplot
     this->scrollBarZ_page2 = new QScrollBar(Qt::Horizontal);
     this->scrollBarZ_page2->setGeometry(50, 470, 600, 20);
@@ -124,8 +146,6 @@ void ultrasound_cscan_seg::handleButton_Cscan() {
                             arg(scrollBarZ_page2->minimum()).arg(scrollBarZ_page2->maximum()).arg(value);
         sBZ_label->setText(labelText);
     });
-    //    // Create the QCustomPlot widget
-    //    this->customPlot1_page2 = new QCustomPlot();
     //    // Create a horizontal layout for the main window
     QWidget *rightPanel = new QWidget();
     QHBoxLayout *hLayout = new QHBoxLayout();
@@ -138,17 +158,9 @@ void ultrasound_cscan_seg::handleButton_Cscan() {
     //    plot1l->addWidget(this->customPlot1_page2);
     plot1l->addWidget(this->scrollBarZ_page2);
     plot1l->addWidget(sBZ_label);
-    //    // Create a vertical layout for 2
-    //    QVBoxLayout *plot2l = new QVBoxLayout();
-    //    QWidget *plot2w = new QWidget();
-    //    plot2w->setLayout(plot2l);
-    //    // Add some widgets to the right panel
-    //    plot2l->addWidget(this->customPlot2_page2);
-    //    // Add some widgets to the right panel;
     hLayout->addWidget(plot1w);
     //    hLayout->addWidget(plot2w);
     this->layout2->addWidget(rightPanel);
-
     // Set the range of the QScrollBars based on the size of the data
     this->scrollBarZ_page2->setRange(0, z_size - 1);
     // Set the initial values of the QScrollBars
@@ -501,7 +513,6 @@ void ultrasound_cscan_seg::processFolder(const QString &path) {
     }
 }
 
-
 // read the crop values (start, end) from the inputline
 void ultrasound_cscan_seg::readCropValues(int& start, int& end) {
     // Default values
@@ -532,4 +543,21 @@ void ultrasound_cscan_seg::readCropValues(int& start, int& end) {
         // Handle the error if cropSignalInput is not initialized
         qDebug() << "Crop Signal Input field is not initialized.";
     }
+}
+
+// ******************* on page 4 **********
+// Function to handle FFT calculation (make sure to define this in your class)
+void ultrasound_cscan_seg::handleCalculateFFT() {
+    QVector<QVector<QVector<std::complex<double>>>> fftResult(C_scan_double.size(),
+                                                              QVector<QVector<std::complex<double>>>(C_scan_double[0].size()));
+    for (int i = 0; i < C_scan_double.size(); ++i) {
+        for (int j = 0; j < C_scan_double[i].size(); ++j) {
+            QVector<double> tempVector = C_scan_double[i][j];
+            QVector<std::complex<double>> fftVector = applyFFT1D(tempVector);
+            fftResult[i][j] = fftVector;
+        }
+    }
+    // Now fftResult contains the FFT along the 3rd dimension
+    this->fft3d = fftResult;
+    qDebug() << "finished fft";
 }
