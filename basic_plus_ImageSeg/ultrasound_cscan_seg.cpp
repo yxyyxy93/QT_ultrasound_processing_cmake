@@ -122,7 +122,6 @@ ultrasound_cscan_seg::ultrasound_cscan_seg(QWidget *parent,
         viewer->setAttribute(Qt::WA_DeleteOnClose); // Ensure it's deleted on close
         viewer->show();
     });
-
 }
 
 // ************* 2D analytic-signal and visualization
