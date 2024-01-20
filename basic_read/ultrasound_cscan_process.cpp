@@ -434,6 +434,7 @@ void ultrasound_Cscan_process::handleButton_trim(){
                                          startJ, endJ,
                                          startK, endK);
     }
+    qDebug() << "finish trimming";
 }
 
 void ultrasound_Cscan_process::handleButton_addNoise(){
@@ -499,7 +500,7 @@ void ultrasound_Cscan_process::handleButton_alignsurface(int min_idx){
     for(int i = 0; i < this->Front_surface_idx.size(); i++){
         for(int j = 0; j < this->Front_surface_idx[i].size(); j++){
             int front_idx = this->Front_surface_idx[i][j];
-//            qDebug() << front_idx;
+            // qDebug() << front_idx;
             shiftVector_1D(this->C_scan_AS[i][j],
                            front_idx-min_idx);
             shiftVector_1D(this->C_scan_double[i][j],
@@ -606,7 +607,7 @@ void ultrasound_Cscan_process::calculateSurface() {
     QVector<double> Front_surface_val_i;
     // I set this threshold to avoid the bug in simulation data: finding the second echo as max.
     int prevMaxIndex = 0;  // Initial value, adjust based on your data requirements
-    int threshold = 700; // threshold for the max index
+    int threshold = 1000; // threshold for the max index
     for (int i = 0; i < this->C_scan_AS.size(); i++) {
         for (int j = 0; j < this->C_scan_AS[i].size(); j++) {
             QVector<std::complex<double>> Ascan_as = this->C_scan_AS[i][j];
@@ -615,10 +616,10 @@ void ultrasound_Cscan_process::calculateSurface() {
             //                                                        return std::abs(a) < std::abs(b);
             //                                                    });
             // tailored for exp.
-            double threshold = 0.5;
+            double threshold_val = 0.5;
             auto maxElementIndex = std::find_if(Ascan_as.begin(), Ascan_as.end(),
-                                                [threshold](std::complex<double> a) {
-                                                    return std::abs(a) > threshold;
+                                                [threshold_val](std::complex<double> a) {
+                                                    return std::abs(a) > threshold_val;
                                                 });
             double currentIndex = std::distance(Ascan_as.begin(), maxElementIndex);
             if (currentIndex > threshold) {
