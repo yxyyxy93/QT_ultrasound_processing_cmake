@@ -13,12 +13,24 @@ OrthosliceViewer::OrthosliceViewer(QWidget *parent,
     connectSignals();
 }
 
+OrthosliceViewer::OrthosliceViewer(QWidget *parent,
+                                   const QVector<QVector<QVector<double>>> &C_scan_double)
+    : QWidget(parent), C_scan_double(C_scan_double) {
+    setupUI();
+    connectSignals();
+}
+
 OrthosliceViewer::~OrthosliceViewer() {
     // Clean up dynamic memory, if any
 }
 
 void OrthosliceViewer::setdata(const QVector<QVector<QVector<std::complex<double>>>> &C_scan_AS,
                                const QVector<QVector<QVector<double>>> &C_scan_double) {
+    this->C_scan_double = C_scan_double;
+    this->C_scan_AS = C_scan_AS;
+};
+
+void OrthosliceViewer::setdata(const QVector<QVector<QVector<double>>> &C_scan_double) {
     this->C_scan_double = C_scan_double;
     this->C_scan_AS = C_scan_AS;
 };

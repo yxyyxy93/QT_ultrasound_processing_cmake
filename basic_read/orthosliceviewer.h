@@ -19,10 +19,14 @@ public:
                               const QVector<QVector<QVector<std::complex<double>>>> &C_scan_AS = {},
                               const QVector<QVector<QVector<double>>> &C_scan_double = {});
 
+    explicit OrthosliceViewer(QWidget *parent = nullptr,
+                              const QVector<QVector<QVector<double>>> &C_scan_double = {});
+
     ~OrthosliceViewer();
 
     void setdata(const QVector<QVector<QVector<std::complex<double>>>> &C_scan_AS,
                 const QVector<QVector<QVector<double>>> &C_scan_double);
+    void setdata(const QVector<QVector<QVector<double>>> &C_scan_double);
 
     void updatePlot();
     void onCustomPlotClicked_Cscan(QMouseEvent* event);

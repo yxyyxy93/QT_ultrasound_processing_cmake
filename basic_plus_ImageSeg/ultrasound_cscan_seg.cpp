@@ -122,6 +122,25 @@ ultrasound_cscan_seg::ultrasound_cscan_seg(QWidget *parent,
         viewer->setAttribute(Qt::WA_DeleteOnClose); // Ensure it's deleted on close
         viewer->show();
     });
+
+    // Create the Cepstrum calculation button
+    QPushButton *calculateCepstrumButton = new QPushButton(tr("Calculate Cepstrum"), page4);
+    QPushButton *plotCepstrumButton = new QPushButton(tr("Plot Cepstrum"), page4);
+
+    layout4->addWidget(calculateCepstrumButton);
+    layout4->addWidget(plotCepstrumButton);
+
+    // Connect the button's clicked signal to the relevant slot for calculation
+    connect(calculateCepstrumButton, &QPushButton::clicked, this, &ultrasound_cscan_seg::handleCalculateCepstrum);
+    // Connect the button's clicked signal for plotting
+    connect(plotCepstrumButton, &QPushButton::clicked, this, [this]() {
+        // Assuming cepstrum3d is the variable holding the calculated cepstrum
+        OrthosliceViewer *viewer = new OrthosliceViewer(nullptr,
+                                                        this->cepstrum3d,
+                                                        abs(this->cepstrum3d));
+        viewer->setAttribute(Qt::WA_DeleteOnClose); // Ensure it's deleted on close
+        viewer->show();
+    });
 }
 
 // ************* 2D analytic-signal and visualization
@@ -559,4 +578,26 @@ void ultrasound_cscan_seg::handleCalculateFFT() {
     // Now fftResult contains the FFT along the 3rd dimension
     this->fft3d = fftResult;
     qDebug() << "finished fft";
+}
+
+void ultrasound_cscan_seg::handleCalculateCepstrum() {
+    // Assuming C_scan_double is already initialized and filled with data
+    int sizeX = this->C_scan_double.size();
+    int sizeY = this->C_scan_double[0].size();
+    int sizeZ = this->C_scan_double[0][0].size();
+
+    QVector<QVector<QVector<std::complex<double>>>> C_scan_Cepstra;
+    C_scan_Cepstra.resize(sizeX);
+    for (int x = 0; x < sizeX; ++x) {
+        C_scan_Cepstra[x].resize(sizeY);
+        for (int y = 0; y < sizeY; ++y) {
+            C_scan_Cepstra[x][y].resize(sizeZ);
+            QVector<double> tempVector = C_scan_double[x][y];
+            QVector<std::complex<double>> fftVector = applyFFT1D(tempVector);
+            QVector<double> fftVector_abs = abs(fftVector);
+            QVector<std::complex<double>> fft2Vector = applyFFT1D(fftVector_abs);
+            C_scan_Cepstra[x][y]=fft2Vector;
+        }
+    }
+    this->cepstrum3d = C_scan_Cepstra;
 }

@@ -108,7 +108,6 @@ private:
 
     // C-scan settings
     int CscanPlotMode=2; // default single slice
-
     // calculations
     void calculateSurface();
 

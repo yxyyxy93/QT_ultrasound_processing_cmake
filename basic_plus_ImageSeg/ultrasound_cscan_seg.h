@@ -45,6 +45,7 @@ private slots:
 
     // slot on page 4
     void handleCalculateFFT();
+    void handleCalculateCepstrum();
 
 public slots:
     void closeDrawnArea();
@@ -84,6 +85,7 @@ private:
 
     // functions on page 4
     QVector<QVector<QVector<std::complex<double>>>> fft3d;
+    QVector<QVector<QVector<std::complex<double>>>> cepstrum3d;
 };
 #endif // ULTRASOUND_CSCAN_SEG_H
 

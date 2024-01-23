@@ -97,6 +97,7 @@ QVector<T> downsampleVector(const QVector<T>& original, int rate)
 
 // define operators for qvector of complex
 QVector<QVector<QVector<double>>> abs(const QVector<QVector<QVector<std::complex<double>>>>& v);
+QVector<double> abs(const QVector<std::complex<double>>& v);
 QVector<QVector<QVector<double>>> phase(const QVector<QVector<QVector<std::complex<double>>>>& v);
 
 // calculate statistics

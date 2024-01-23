@@ -249,6 +249,16 @@ QVector<QVector<QVector<double>>> abs(const QVector<QVector<QVector<std::complex
 
     return result;
 }
+
+QVector<double> abs(const QVector<std::complex<double>>& v) {
+    int numElements = v.size();
+    QVector<double> result(numElements);
+    for (int i = 0; i < numElements; i++) {
+        result[i] = std::abs(v[i]);
+    }
+    return result;
+}
+
 QVector<QVector<QVector<double>>> phase(const QVector<QVector<QVector<std::complex<double>>>>& v){
     int numRows = v.size();
     int numCols = v[0].size();
