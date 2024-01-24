@@ -36,7 +36,8 @@ set(HEADER_FILES
 )
 
 
-add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES}
+    ../basic_read/fftprocessing.cpp ../basic_read/fftprocessing.h)
 target_link_libraries(${PROJECT_NAME} Qt6::Core Qt6::Gui Qt6::Widgets Qt6::PrintSupport)
 
 # --------- FFTW3 linking if necessary

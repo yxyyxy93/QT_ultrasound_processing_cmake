@@ -277,6 +277,15 @@ QVector<QVector<QVector<double>>> phase(const QVector<QVector<QVector<std::compl
     return result;
 }
 
+QVector<double> real(const QVector<std::complex<double>>& v){
+    int numElements = v.size();
+    QVector<double> result(numElements);
+    for (int i = 0; i < numElements; i++) {
+        result[i] = v[i].real();
+    }
+    return result;
+}
+
 // calculate statistics
 QMap<int, int> calculateHistogram(const QVector<double>& data, int numBins)
 {

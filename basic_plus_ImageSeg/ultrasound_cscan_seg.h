@@ -41,6 +41,8 @@ private slots:
 
     // slot on page 3
     void handleButton_multiSNR();
+    void handleButtonSegmentDataset();
+    void segmentAndSaveData();
     void selectFolder();
 
     // slot on page 4
