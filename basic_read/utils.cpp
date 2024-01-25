@@ -440,6 +440,60 @@ QVector<QVector<double>> createGaussianKernel(int kernelSize, double sigma) {
     return kernel;
 }
 
+QVector<QVector<QVector<double>>> denoise3D(const QVector<QVector<QVector<double>>>& data, int kernel_size) {
+    if (data.isEmpty() || data[0].isEmpty() || data[0][0].isEmpty() || kernel_size < 1) {
+        return data; // Return the original data if it's empty, not 3D, or kernel size is invalid
+    }
+    int sizeX = data.size();
+    int sizeY = data[0].size();
+    int sizeZ = data[0][0].size();
+    QVector<QVector<QVector<double>>> result(sizeX, QVector<QVector<double>>(sizeY, QVector<double>(sizeZ, 0.0)));
+    // Calculate the range for the kernel
+    int kHalf = kernel_size / 2;
+    // median filter
+    for (int x = kHalf; x < sizeX - kHalf; ++x) {
+        for (int y = kHalf; y < sizeY - kHalf; ++y) {
+            for (int z = kHalf; z < sizeZ - kHalf; ++z) {
+                std::vector<double> neighbors;
+                neighbors.reserve(kernel_size * kernel_size * kernel_size);
+                for (int i = -kHalf; i <= kHalf; ++i) {
+                    for (int j = -kHalf; j <= kHalf; ++j) {
+                        for (int k = -kHalf; k <= kHalf; ++k) {
+                            neighbors.push_back(data[x + i][y + j][z + k]);
+                        }
+                    }
+                }
+                // Find the median
+                std::nth_element(neighbors.begin(), neighbors.begin() + neighbors.size() / 2, neighbors.end());
+                double median = neighbors[neighbors.size() / 2];
+                result[x][y][z] = median;
+            }
+        }
+    }
+    // average filter
+    QVector<QVector<QVector<double>>> result_ave(sizeX, QVector<QVector<double>>(sizeY, QVector<double>(sizeZ, 0.0)));
+    for (int x = kHalf; x < sizeX - kHalf; ++x) {
+        for (int y = kHalf; y < sizeY - kHalf; ++y) {
+            for (int z = kHalf; z < sizeZ - kHalf; ++z) {
+                double sum = 0.0;
+                int count = 0;
+                // Iterate through the neighboring cells including the cell itself
+                for (int i = -kHalf; i <= kHalf; ++i) {
+                    for (int j = -kHalf; j <= kHalf; ++j) {
+                        for (int k = -kHalf; k <= kHalf; ++k) {
+                            sum += result[x + i][y + j][z + k];
+                            ++count;
+                        }
+                    }
+                }
+                result_ave[x][y][z] = sum / count; // Average value
+            }
+        }
+    }
+    // Handle the borders separately if needed (can be left as is, zero-padded, or mirrored)
+    return result_ave;
+}
+
 // **************** fill in nan
 bool isNaN(double value) {
     return std::isnan(value);

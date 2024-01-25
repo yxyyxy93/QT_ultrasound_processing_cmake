@@ -139,6 +139,7 @@ void printLayoutInfo(QLayout *layout);
 // ********** image processing
 QVector<QVector<double>> applyMedianFilter(const QVector<QVector<double>>& image, int filterSize);
 QVector<QVector<double>> createGaussianKernel(int kernelSize, double sigma);
+QVector<QVector<QVector<double>>> denoise3D(const QVector<QVector<QVector<double>>>& data, int kernel_size);
 
 // ********** fill nan
 // Check if a value is NaN

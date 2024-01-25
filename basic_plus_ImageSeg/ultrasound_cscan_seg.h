@@ -42,7 +42,7 @@ private slots:
     // slot on page 3
     void handleButton_multiSNR();
     void handleButtonSegmentDataset();
-    void segmentAndSaveData();
+    void segmentAndSaveData(const QVector<QVector<QVector<std::complex<double>>>> data3d);
     void selectFolder();
 
     // slot on page 4

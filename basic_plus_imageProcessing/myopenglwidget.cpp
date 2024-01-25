@@ -1,8 +1,83 @@
 #include "MyOpenGLWidget.h"
 #include <QMouseEvent>
+#include <QScrollBar>
+#include <QVBoxLayout>
+#include <QPainter>
+#include <QCheckBox>
 
+#include "..\basic_read\utils.h"
+
+// Adjust these values to position the axes at a desired location in the scene
+float axisOffsetX = 1.5f;
+float axisOffsetY = 1.5f;
+float axisOffsetZ = 1.5f;
+
+// Example axis vertices with offset
+const GLfloat axisVertices[] = {
+    // X axis (Red)
+    axisOffsetX - 1.0f, axisOffsetY, axisOffsetZ, 1.0f, 0.0f, 0.0f,
+    axisOffsetX + 1.0f, axisOffsetY, axisOffsetZ, 1.0f, 0.0f, 0.0f,
+    // Y axis (Green)
+    axisOffsetX, axisOffsetY - 1.0f, axisOffsetZ, 0.0f, 1.0f, 0.0f,
+    axisOffsetX, axisOffsetY + 1.0f, axisOffsetZ, 0.0f, 1.0f, 0.0f,
+    // Z axis (Blue)
+    axisOffsetX, axisOffsetY, axisOffsetZ - 1.0f, 0.0f, 0.0f, 1.0f,
+    axisOffsetX, axisOffsetY, axisOffsetZ + 1.0f, 0.0f, 0.0f, 1.0f
+};
+GLuint axisVAO, axisVBO;
+
+// Constructor
 MyOpenGLWidget::MyOpenGLWidget(QWidget *parent)
-    : QOpenGLWidget(parent), m_program(nullptr) {
+    : QOpenGLWidget(parent), m_program(nullptr), viewAngle(45.0f), visibilityThreshold(0.5f), useDenoisedData(false) {
+
+    // Initialize the scrollbar for adjusting the view angle
+    QScrollBar *angleScrollBar = new QScrollBar(Qt::Horizontal, this);
+    angleScrollBar->setRange(0, 360); // Range of angles
+    angleScrollBar->setValue(45); // Initial angle
+
+    // Connect the scrollbar's signal to the slot for angle change
+    connect(angleScrollBar, &QScrollBar::valueChanged, this, &MyOpenGLWidget::setViewAngle);
+
+    // Layout to add scrollbar below the OpenGL widget
+    QVBoxLayout *layout = new QVBoxLayout(this);
+    layout->addWidget(angleScrollBar);
+    layout->setAlignment(Qt::AlignBottom);
+
+    // Initialize the scrollbar for setting the visibility threshold
+    QScrollBar *thresholdScrollBar = new QScrollBar(Qt::Horizontal, this);
+    thresholdScrollBar->setRange(0, 100); // Threshold range (e.g., 0-100%)
+    thresholdScrollBar->setValue(100); // Initial threshold value
+    // Connect the scrollbar's signal to the slot for threshold change
+    connect(thresholdScrollBar, &QScrollBar::valueChanged, this, &MyOpenGLWidget::setVisibilityThreshold);
+
+    // Create and add the checkbox for useDenoisedData
+    QCheckBox *denoiseCheckbox = new QCheckBox("Use Denoised Data", this);
+    connect(denoiseCheckbox, &QCheckBox::stateChanged, this, &MyOpenGLWidget::toggleDenoisedData);
+    layout->addWidget(denoiseCheckbox);
+
+    // Set the layout alignment
+    layout->setAlignment(Qt::AlignBottom);
+
+    layout->addWidget(thresholdScrollBar);
+    layout->setAlignment(Qt::AlignBottom);
+}
+
+// Slot to toggle useDenoisedData
+void MyOpenGLWidget::toggleDenoisedData(int state) {
+    useDenoisedData = (state == Qt::Checked);
+    update(); // Trigger a repaint to reflect the change
+}
+
+// Slot to update the view angle
+void MyOpenGLWidget::setViewAngle(int angle) {
+    this->viewAngle = angle;
+    update(); // Trigger a repaint
+}
+
+// Slot to update the visibility threshold
+void MyOpenGLWidget::setVisibilityThreshold(int value) {
+    this->visibilityThreshold = static_cast<float>(value) / 100.0f; // Convert to a percentage
+    update(); // Trigger a repaint
 }
 
 MyOpenGLWidget::~MyOpenGLWidget() {
@@ -58,7 +133,22 @@ void MyOpenGLWidget::initializeGL() {
     glEnableVertexAttribArray(1);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0); // Unbind the VBO
-    glBindVertexArray(0); // Unbind the VAO
+
+    // *************** for axis coordinates
+    // Generate and bind the VAO for the axes
+    glGenVertexArrays(1, &axisVAO);
+    glBindVertexArray(axisVAO);
+    // Generate and bind the VBO for the axes
+    glGenBuffers(1, &axisVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, axisVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(axisVertices), axisVertices, GL_STATIC_DRAW);
+    // Position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+    // Color attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(1);
+    glBindVertexArray(0); // Unbind VAO
 
     // Enable depth testing
     glEnable(GL_DEPTH_TEST);
@@ -80,31 +170,45 @@ void MyOpenGLWidget::resizeGL(int w, int h) {
 }
 
 void MyOpenGLWidget::paintGL() {
-    // Set the clear color to white
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // RGBA values for white
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glPointSize(10.0f); // Set the point size to 10 pixels
+    // Clear the buffer
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // Set clear color to white
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear color and depth buffers
+    glPointSize(2.0f); // Set the point size
 
-    m_program->bind();
-
-    // Calculate transformation
+    m_program->bind(); // Bind your shader program
+    // Set up transformation matrices
     QMatrix4x4 model;
-    model.translate(0.0f, 0.0f, -2.0f); // Move back 2 units into the scene
-    model.rotate(45.0f, 0.0f, 1.0f, 0.0f); // Rotate 45 degrees around the y-axis
+    model.translate(0.0f, 0.0f, -2.0f);
+    model.rotate(this->viewAngle, 0.0f, 1.0f, 0.0f); // Rotate around the y-axis using the scrollbar angle
+
     QMatrix4x4 view;
-    view.translate(0.0f, 0.0f, -3.0f); // Move back 3 units from camera
+    view.translate(0.0f, 0.0f, -3.0f);
 
     m_program->setUniformValue("model", model);
     m_program->setUniformValue("view", view);
 
-    // Render the triangle
+    // Choose the data set based on the useDenoisedData flag
+    const QVector<GLfloat>& currentVertexData = this->useDenoisedData ? vertexData_denoise : vertexData;
+
+
+    // Draw the point cloud or other objects
     glBindVertexArray(VAO);
-    int numPoints = this->vertexData.size() / 6; // Assuming 3 position floats + 3 color floats per vertex
-    glDrawArrays(GL_POINTS, 0, numPoints);
+    int numPoints = currentVertexData.size() / 6; // Assuming 6 floats per vertex
+    for (int i = 0; i < numPoints; i++) {
+        int vertexStart = i * 6;
+        if (currentVertexData[vertexStart + 3] >= this->visibilityThreshold) {
+            glDrawArrays(GL_POINTS, i, 1); // Draw each point that meets the threshold
+        }
+    }
+    glBindVertexArray(0); // Unbind the VAO
 
-    // glBindVertexArray(0); // No need to unbind it every time
+    // Draw the axes
+    glBindVertexArray(axisVAO); // Ensure you have created this VAO and uploaded the axis vertices
+    glDrawArrays(GL_LINES, 0, 6); // 6 vertices total for the 3 lines (2 per line)
+    glBindVertexArray(0); // Unbind the axis VAO
+
+    m_program->release(); // Release the shader program
 }
-
 
 // ************* convert the structure to vertices
 void MyOpenGLWidget::convertStructureToVertices(const QVector<QVector<QVector<double>>>& structure) {
@@ -126,9 +230,7 @@ void MyOpenGLWidget::convertStructureToVertices(const QVector<QVector<QVector<do
             }
         }
     }
-
     // Now, minVal and maxVal can be used in the mapValueToColor function
-
     for (int x = 0; x < sizeX; ++x) {
         for (int y = 0; y < sizeY; ++y) {
             for (int z = 0; z < sizeZ; ++z) {
@@ -145,6 +247,37 @@ void MyOpenGLWidget::convertStructureToVertices(const QVector<QVector<QVector<do
                 this->vertexData.push_back(color.x()); // R
                 this->vertexData.push_back(color.y()); // G
                 this->vertexData.push_back(color.z()); // B
+            }
+        }
+    }
+
+    QVector<QVector<QVector<double>>> structure_dn = denoise3D(structure, 6);
+    // Find the min and max values in the dataset
+    for (const auto& layer : structure_dn) {
+        for (const auto& row : layer) {
+            for (const auto& val : row) {
+                minVal = std::min(minVal, val);
+                maxVal = std::max(maxVal, val);
+            }
+        }
+    }
+    // Now, minVal and maxVal can be used in the mapValueToColor function
+    for (int x = 0; x < sizeX; ++x) {
+        for (int y = 0; y < sizeY; ++y) {
+            for (int z = 0; z < sizeZ; ++z) {
+                // Normalize the indices to the range [-1, 1]
+                float posX = 2.0f * x / (sizeX - 1) - 1.0f;
+                float posY = 2.0f * y / (sizeY - 1) - 1.0f;
+                float posZ = 2.0f * z / (sizeZ - 1) - 1.0f;
+                // Add position data
+                this->vertexData_denoise.push_back(posX);
+                this->vertexData_denoise.push_back(posY);
+                this->vertexData_denoise.push_back(posZ);
+                // Add color data (for example, based on Z value)
+                QVector3D color = mapValueToColor(structure_dn[x][y][z], minVal, maxVal);
+                this->vertexData_denoise.push_back(color.x()); // R
+                this->vertexData_denoise.push_back(color.y()); // G
+                this->vertexData_denoise.push_back(color.z()); // B
             }
         }
     }

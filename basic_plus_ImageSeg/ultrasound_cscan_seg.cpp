@@ -106,6 +106,14 @@ ultrasound_cscan_seg::ultrasound_cscan_seg(QWidget *parent,
         // Optional: Connect the ComboBox signal to a slot
         // connect(myComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(yourSlotFunction(int)));
     }
+    if (!widgetExistsInLayout<QPushButton>(this->layout3, "segmentButton")) {
+        // Create the segment button
+        QPushButton *segmentButton = new QPushButton("Segment", this);
+        segmentButton->setObjectName("segmentButton"); // Assign unique object name
+        // Add the button to the layout
+        this->layout3->addWidget(segmentButton);
+        connect(segmentButton, &QPushButton::clicked, this, &ultrasound_cscan_seg::handleButtonSegmentDataset);
+    }
 
     // ******************************* 4th page
     // Assuming tabWidget is your QTabWidget
@@ -498,25 +506,41 @@ void ultrasound_cscan_seg::handleButton_multiSNR() {
     }
 }
 
-void ultrasound_cscan_seg::segmentAndSaveData() {
-    int sizeX = this->C_scan_AS.size();
-    int sizeY = this->C_scan_AS[0].size();
-    int sizeZ = this->C_scan_AS[0][0].size();
+void ultrasound_cscan_seg::handleButtonSegmentDataset() {
+    ultrasound_cscan_seg::segmentAndSaveData(this->C_scan_AS);
+}
+
+void ultrasound_cscan_seg::segmentAndSaveData(const QVector<QVector<QVector<std::complex<double>>>> data3d) {
+    int sizeX = data3d.size();
+    int sizeY = data3d[0].size();
+    int sizeZ = data3d[0][0].size();
     int chunkSizeX = 16;
     int chunkSizeY = 16;
 
+    // read the corping values for signal
     int startValue, endValue;
+    this->readCropValues(startValue, endValue);
+    // Check if values are valid, assuming that startValue should be less than endValue
+    if (startValue < 0 || endValue <= startValue) {
+        qDebug() << "Invalid cropping range. Start should be less than End.";
+        return;
+    }
 
-    // Step 1: Create the 'chunks' subfolder
+    // Step 1: Create the 'chunks' subfolder in the parent of 'this->fn'
     QDir dir(this->fn);
-    QDir chunksDir = dir.filePath("chunks");
+    // Go to the parent directory
+    if (!dir.cdUp()) {
+        qWarning() << "Could not navigate to the parent directory of:" << this->fn;
+        return;
+    }
+    QString chunksPath = dir.filePath("chunks"); // Path for the 'chunks' directory in the parent directory
+    QDir chunksDir(chunksPath);
     if (!chunksDir.exists()) {
         if (!chunksDir.mkpath(".")) {
-            qWarning() << "Could not create 'chunks' directory in:";
+            qWarning() << "Could not create 'chunks' directory in:" << chunksPath;
             return;
         }
     }
-
     // check the saving patterns
     int selectedIndex = this->myComboBox_savepattern->currentIndex();
     QString selectedOption = this->myComboBox_savepattern->itemText(selectedIndex);
@@ -532,20 +556,17 @@ void ultrasound_cscan_seg::segmentAndSaveData() {
             QTextStream out(&file);
             for (int i = x; i < std::min(x + chunkSizeX, sizeX); ++i) {
                 for (int j = y; j < std::min(y + chunkSizeY, sizeY); ++j) {
-                    QVector<std::complex<double>> Ascan = this->C_scan_AS[i][j];
+                    QVector<std::complex<double>> Ascan = data3d[i][j];
                     QTextStream out(&file);
                     // Write dimensions as the first line
-                    if (!this->C_scan_AS.isEmpty() && !this->C_scan_AS[0].isEmpty()) {
-                        int x = this->C_scan_AS.size();
-                        int y = this->C_scan_AS[0].size();
+                    if (!data3d.isEmpty() && !data3d[0].isEmpty()) {
                         int z = endValue-startValue+1;
-                        out << x << "," << y << "," << z << "\n";
+                        out << chunkSizeX << "," << chunkSizeY << "," << z << "\n";
                     } else {
                         qWarning() << "Data is empty, cannot write to file";
                         file.close();
                         return;
                     }
-
                     QStringList values;
                     if (selectedIndex == 3) { // cepstra
                         QVector<std::complex<double>> half_fft2Vector = FFTProcessing::processFFT(real(Ascan));
@@ -569,13 +590,13 @@ void ultrasound_cscan_seg::segmentAndSaveData() {
                     }
                     out << values.join(',') << "\n";
                 }
-                this->progressBarPage3->setValue(100 * i / this->C_scan_AS.size());
-                file.close();
-                // Update the progress bar
-                QCoreApplication::processEvents(); // Allow GUI updates
             }
+            this->progressBarPage3->setValue(100 * x / sizeX);
+            file.close();
         }
     }
+    // Update the progress bar
+    QCoreApplication::processEvents(); // Allow GUI updates
 }
 
 void ultrasound_cscan_seg::selectFolder() {
