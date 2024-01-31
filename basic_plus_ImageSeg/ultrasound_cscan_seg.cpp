@@ -470,11 +470,11 @@ void ultrasound_cscan_seg::handleButton_multiSNR() {
                         QStringList values;
                         if (selectedIndex == 3) { // cepstra
                             QVector<std::complex<double>> half_fft2Vector = FFTProcessing::processFFT(real(Ascan));
-                            for (int k = startValue; k <= endValue; ++k) {
+                            for (int k = startValue; k <= endValue; k+=downsampleRate) {
                                 values << QString::number(abs(half_fft2Vector[k]));
                             }
                         }
-                        for (int k = startValue; k <= endValue; ++k) {
+                        for (int k = startValue; k <= endValue; k+=downsampleRate) {
                             if (selectedIndex == 0) {
                                 values << QString::number(1e10*Ascan[k].real());
                             }
@@ -516,7 +516,6 @@ void ultrasound_cscan_seg::segmentAndSaveData(const QVector<QVector<QVector<std:
     int sizeZ = data3d[0][0].size();
     int chunkSizeX = 16;
     int chunkSizeY = 16;
-
     // read the corping values for signal
     int startValue, endValue;
     this->readCropValues(startValue, endValue);
@@ -525,7 +524,6 @@ void ultrasound_cscan_seg::segmentAndSaveData(const QVector<QVector<QVector<std:
         qDebug() << "Invalid cropping range. Start should be less than End.";
         return;
     }
-
     // Step 1: Create the 'chunks' subfolder in the parent of 'this->fn'
     QDir dir(this->fn);
     // Go to the parent directory
@@ -544,29 +542,27 @@ void ultrasound_cscan_seg::segmentAndSaveData(const QVector<QVector<QVector<std:
     // check the saving patterns
     int selectedIndex = this->myComboBox_savepattern->currentIndex();
     QString selectedOption = this->myComboBox_savepattern->itemText(selectedIndex);
-
-    for (int x = 0; x < sizeX; x += chunkSizeX) {
-        for (int y = 0; y < sizeY; y += chunkSizeY) {
+    for (int x = 0; x < sizeX-chunkSizeX; x += chunkSizeX) {
+        for (int y = 0; y < sizeY-chunkSizeY; y += chunkSizeY) {
             QString newFileName = chunksDir.filePath(QString::number(x) + "_" + QString::number(y) + ".csv");
             QFile file(newFileName);
+            QTextStream out(&file);
             if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
                 qWarning() << "Could not open file for writing:" << file.errorString();
                 continue;
             }
-            QTextStream out(&file);
+            // Write dimensions as the first line
+            if (!data3d.isEmpty() && !data3d[0].isEmpty()) {
+                int z = endValue-startValue+1;
+                out << chunkSizeX << "," << chunkSizeY << "," << z << "\n";
+            } else {
+                qWarning() << "Data is empty, cannot write to file";
+                file.close();
+                return;
+            }
             for (int i = x; i < std::min(x + chunkSizeX, sizeX); ++i) {
                 for (int j = y; j < std::min(y + chunkSizeY, sizeY); ++j) {
                     QVector<std::complex<double>> Ascan = data3d[i][j];
-                    QTextStream out(&file);
-                    // Write dimensions as the first line
-                    if (!data3d.isEmpty() && !data3d[0].isEmpty()) {
-                        int z = endValue-startValue+1;
-                        out << chunkSizeX << "," << chunkSizeY << "," << z << "\n";
-                    } else {
-                        qWarning() << "Data is empty, cannot write to file";
-                        file.close();
-                        return;
-                    }
                     QStringList values;
                     if (selectedIndex == 3) { // cepstra
                         QVector<std::complex<double>> half_fft2Vector = FFTProcessing::processFFT(real(Ascan));
@@ -579,7 +575,7 @@ void ultrasound_cscan_seg::segmentAndSaveData(const QVector<QVector<QVector<std:
                             values << QString::number(1e10*Ascan[k].real());
                         }
                         else if (selectedIndex == 1) {
-                            values << QString::number(1e10*abs(Ascan[k]));
+                            values << QString::number(abs(Ascan[k]));
                         }
                         else if (selectedIndex == 2) {
                             values << QString::number(atan2(Ascan[k].imag(), Ascan[k].real()));
@@ -594,6 +590,7 @@ void ultrasound_cscan_seg::segmentAndSaveData(const QVector<QVector<QVector<std:
             this->progressBarPage3->setValue(100 * x / sizeX);
             file.close();
         }
+        this->progressBarPage3->setValue(100);
     }
     // Update the progress bar
     QCoreApplication::processEvents(); // Allow GUI updates
@@ -626,12 +623,6 @@ void ultrasound_cscan_seg::processFolder(const QString &path) {
                 // align the surface
                 // ultrasound_Cscan_process::calculateSurface();
                 // read downsample ratio
-                bool ok_ds;
-                int downsampleRate = this->downsampleRateInput->text().toInt(&ok_ds);
-                if (!ok_ds || downsampleRate <= 0) {
-                    // Handle error: invalid input
-                    return;
-                }
                 // int min_idx = 100*downsampleRate; // manual setting, times the ds factor
                 // ultrasound_Cscan_process::handleButton_alignsurface(min_idx);
                 // save

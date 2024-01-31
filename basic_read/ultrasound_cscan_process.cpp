@@ -485,7 +485,7 @@ void ultrasound_Cscan_process::handleButton_surface()
     if (!this->myButton_alignsurface) { // Assuming myButton_alignsurface is declared in the header
         this->myButton_alignsurface = new QPushButton(tr("Align front surface"), this);
         this->layout->addWidget(myButton_alignsurface);
-        int min_idx = 100; // manual setting
+        int min_idx = 50; // manual setting
         connect(myButton_alignsurface,
                 &QPushButton::clicked,
                 this,
@@ -616,7 +616,7 @@ void ultrasound_Cscan_process::calculateSurface() {
             //                                                        return std::abs(a) < std::abs(b);
             //                                                    });
             // tailored for exp.
-            double threshold_val = 0.5;
+            double threshold_val = 0.5e9;
             auto maxElementIndex = std::find_if(Ascan_as.begin(), Ascan_as.end(),
                                                 [threshold_val](std::complex<double> a) {
                                                     return std::abs(a) > threshold_val;
@@ -630,6 +630,7 @@ void ultrasound_Cscan_process::calculateSurface() {
             }
             Front_surface_idx_i.push_back(currentIndex);
             Front_surface_val_i.push_back(std::abs(*maxElementIndex));
+            // qDebug() << currentIndex;
         }
         this->Front_surface_idx.push_back(Front_surface_idx_i);
         this->Front_surface_val.push_back(Front_surface_val_i);
@@ -638,7 +639,7 @@ void ultrasound_Cscan_process::calculateSurface() {
     }
     // ******** 2D median filter or fitting
     QLineEdit* polynomialDegreeInput = this->findChild<QLineEdit*>("polynomialDegreeInput");
-    int degree = 1;
+    int degree = 3;
     if (polynomialDegreeInput) {
         bool ok;
         int degree = polynomialDegreeInput->text().toInt(&ok);
