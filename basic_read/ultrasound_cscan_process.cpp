@@ -280,16 +280,14 @@ void ultrasound_Cscan_process::processFile(const QFileInfo &fileInfo) {
         for (int i = 0; i < x; ++i) {
             this->C_scan_double[i].resize(y);
             for (int j = 0; j < y; ++j) {
-                this->C_scan_double[i][j].resize(z);
-            }
-        }
-        // Read the flattened data and reshape it
-        for (int i = 0; i < x; ++i) {
-            for (int j = 0; j < y; ++j) {
                 QString line = in.readLine();
                 QStringList values = line.split(',');
-                for (int k = 0; k < z; ++k) {
-                    this->C_scan_double[i][j][k] = values[k].toDouble();
+
+                // Resize the third dimension based on the actual number of values
+                this->C_scan_double[i][j].resize(values.size());
+
+                for (int index = 0; index < values.size(); ++index) {
+                    this->C_scan_double[i][j][index] = values[index].toDouble();
                 }
             }
         }
