@@ -82,7 +82,7 @@ ultrasound_cscan_process_2DAS::ultrasound_cscan_process_2DAS(QWidget *parent,
     QPushButton *plot3DButton = new QPushButton("Plot 3D structure", page3);
     this->layout3->addWidget(plot3DButton);
 
-    // Assembling the third page
+    // Assembling the 3rd page
     this->layout3->addWidget(loadButton);
     this->layout3->addWidget(plotButton);
     this->layout3->addWidget(plot3DButton);
@@ -659,13 +659,11 @@ void ultrasound_cscan_process_2DAS::handleButton_myButton_stat(){
     double bins(100);
     double max(M_PI/2);
     double min(-M_PI/2);
-
     double e;
     double l;
     double q;
     double pha;
     double ori;
-
     for (int z = 0; z<z_size; ++z){
         // get the Cscan image
         this->img_Cscan.clear();
@@ -700,7 +698,7 @@ void ultrasound_cscan_process_2DAS::handleButton_myButton_stat(){
                 angular_1d.push_back(ori);
             }
         }
-//        angular_1dstack.push_back(calculateHistogram(angular_1d, bins, max, min));
+        // angular_1dstack.push_back(calculateHistogram(angular_1d, bins, max, min));
         this->m_progressBar_page2->setValue(100 * z / z_size);
         // Update the progress bar
         QCoreApplication::processEvents(); // Allow GUI updates
@@ -757,16 +755,13 @@ void ultrasound_cscan_process_2DAS::load_structures(){
 
 void ultrasound_cscan_process_2DAS::Plot_Ccans_structures() {
     QPushButton *saveButton = new QPushButton("Save", page3);
-
     // Instantiate the QTimer
     debounceTimer_Cscan = new QTimer(this);
     debounceTimer_Cscan->setInterval(100); // Delay of  milliseconds
     debounceTimer_Cscan->setSingleShot(true); // Ensure the timer fires only once after each interval
-
     debounceTimer_structure = new QTimer(this);
     debounceTimer_structure->setInterval(100); // Delay of milliseconds
     debounceTimer_structure->setSingleShot(true); // Ensure the timer fires only once after each interval
-
     // Create QCustomPlot widgets for C-scan and structure plots
     this->customPlot_Cscan = new QCustomPlot();
     this->customPlot_structure = new QCustomPlot();
@@ -775,12 +770,10 @@ void ultrasound_cscan_process_2DAS::Plot_Ccans_structures() {
     QScrollBar *scrollBar_structure = new QScrollBar(Qt::Horizontal);
     scrollBar_Cscan->setRange(0, this->C_scan_AS[0][0].size() - 1);
     scrollBar_structure->setRange(0, this->structure[0][0].size() - 1);
-
     QLabel *scrollBar_Cscan_label = new QLabel();
     QLabel *scrollBar_structure_label = new QLabel();
     scrollBar_Cscan_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     scrollBar_structure_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-
     // Create layouts for the QCustomPlot widgets and their scrollbars
     QVBoxLayout *cscanLayout = new QVBoxLayout();
     cscanLayout->addWidget(customPlot_Cscan);
@@ -794,12 +787,10 @@ void ultrasound_cscan_process_2DAS::Plot_Ccans_structures() {
     QHBoxLayout *plotsLayout = new QHBoxLayout();
     plotsLayout->addLayout(cscanLayout);
     plotsLayout->addLayout(structureLayout);
-
     // Add the QHBoxLayout to the QVBoxLayout of page 3
     layout3->addLayout(plotsLayout);
     // Assembling the third page
     layout3->addWidget(saveButton);
-
     // Connect the scrollbars to their respective update slots
     connect(scrollBar_Cscan, &QScrollBar::valueChanged, this, &ultrasound_cscan_process_2DAS::onCscanScrollBarChanged);
     connect(scrollBar_structure, &QScrollBar::valueChanged, this, &ultrasound_cscan_process_2DAS::onStructureScrollBarChanged);
@@ -817,7 +808,6 @@ void ultrasound_cscan_process_2DAS::Plot_Ccans_structures() {
     // Connect the QTimer's timeout signal to the slot
     connect(debounceTimer_Cscan, &QTimer::timeout, this, &ultrasound_cscan_process_2DAS::updateCscanPlot);
     connect(debounceTimer_structure, &QTimer::timeout, this, &ultrasound_cscan_process_2DAS::updateStructurePlot);
-
     connect(saveButton, &QPushButton::clicked, this, &ultrasound_cscan_process_2DAS::SavePlot);
 }
 
@@ -836,15 +826,12 @@ void ultrasound_cscan_process_2DAS::updateCscanPlot(){
     int y_size = ultrasound_Cscan_process::C_scan_AS[0].size();
     map1->data()->setSize(x_size, y_size);
     map1->data()->setRange(QCPRange(0, x_size), QCPRange(0, y_size));
-
     int depth = ultrasound_Cscan_process::C_scan_AS[0][0].size();
     int lowerBound = qMax(0, sliceZ - 20);
     int upperBound = qMin(depth - 1, sliceZ + 30);
-
     int kernelSize = 3; // Example kernel size
     double sigma = 0.2; // Example sigma value
     auto kernel = createGaussianKernel(kernelSize, sigma);
-
     for (int i = 0; i < x_size; ++i) {
         for (int j = 0; j < y_size; ++j) {
             double filteredValue = 0.0;
@@ -863,7 +850,6 @@ void ultrasound_cscan_process_2DAS::updateCscanPlot(){
             map1->data()->setCell(i, j, filteredValue);
         }
     }
-
 //    // Create and configure the color scale
 //    QCPColorScale *colorScale = new QCPColorScale(this->customPlot_Cscan);
 //    this->customPlot_Cscan->plotLayout()->addElement(0, 1, colorScale); // Add color scale to the right of the plot
@@ -912,12 +898,10 @@ void ultrasound_cscan_process_2DAS::updateStructurePlot(){
 void ultrasound_cscan_process_2DAS::SavePlot(){
     // Use a file dialog to select the file path for saving
     QString baseFilePath = QFileDialog::getSaveFileName(this, tr("Save C-scan Plot"), "", tr("PNG Image (*.png);;JPEG Image (*.jpg);;All Files (*)"));
-
     int sliceZ = lastValueX;
     QString sliceZStr = QString::number(sliceZ);
     QString cscanFilePath = QFileInfo(baseFilePath).path() + "/" +
                             QFileInfo(baseFilePath).completeBaseName() + "_zidx" + sliceZStr + "_Cscan.png";
-
     // Function to hide/show axes and scale ticks
     auto configurePlotForSaving = [](QCustomPlot *plot, bool visible) {
         plot->xAxis->setVisible(visible);
@@ -926,21 +910,17 @@ void ultrasound_cscan_process_2DAS::SavePlot(){
         plot->yAxis->setTickLabels(visible);
         // Add any other elements that need to be hidden
     };
-
     configurePlotForSaving(customPlot_Cscan, false);
     customPlot_Cscan->savePng(cscanFilePath);
     configurePlotForSaving(customPlot_Cscan, true); // Restore the plot's original state
-
-    // ***************** structure plot
+    // **************** structure plot
     sliceZ = lastValueY;
     sliceZStr = QString::number(sliceZ);
     QString structureFilePath = QFileInfo(baseFilePath).path() + "/" +
                                 QFileInfo(baseFilePath).completeBaseName() + "_zidx" + sliceZStr + "_Structure.png";
-
     configurePlotForSaving(customPlot_structure, false);
     customPlot_structure->savePng(structureFilePath);
     configurePlotForSaving(customPlot_structure, true); // Restore the plot's original state
-
 }
 
 void ultrasound_cscan_process_2DAS::onPlot3DButtonClicked() {

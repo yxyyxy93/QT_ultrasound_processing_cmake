@@ -158,3 +158,7 @@ QVector<QVector<double>> fitSurface(QVector<QVector<double>>& data, int degree);
 
 // ********************************** FFT ****************
 QVector<std::complex<double>> applyFFT1D(QVector<double>& data);
+
+// ******************** time gate *****************
+// Function to create a QVector<double> with exponential attenuation
+QVector<double> createExponentialDecayVector(int size, double initialValue, double decayRate);

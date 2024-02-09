@@ -494,6 +494,7 @@ QVector<QVector<QVector<double>>> denoise3D(const QVector<QVector<QVector<double
     return result_ave;
 }
 
+
 // **************** fill in nan
 bool isNaN(double value) {
     return std::isnan(value);
@@ -641,4 +642,16 @@ void ifft(QVector<std::complex<double>>& signal)
 
     // Destroy the FFTW plan
     fftw_destroy_plan(plan);
+}
+
+// ******************** time gate *****************
+// Function to create a QVector<double> with exponential attenuation
+QVector<double> createExponentialDecayVector(int size, double initialValue, double decayRate) {
+    QVector<double> vector;
+    vector.reserve(size); // Reserve space for efficiency
+    for (int i = 0; i < size; ++i) {
+        double value = initialValue * std::pow(decayRate, i);
+        vector.append(value);
+    }
+    return vector;
 }

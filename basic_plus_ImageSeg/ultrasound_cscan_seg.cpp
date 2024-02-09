@@ -270,58 +270,46 @@ void ultrasound_cscan_seg::saveImage() {
                                         tr("End Z-Index:"), 900, 0, 10000, 1, &ok2);
     int step = QInputDialog::getInt(this, tr("Input step Value"),
                                     tr("Step Z-Index:"), 10, 0, 1000, 1, &ok2);
-
     // If the user pressed Cancel, then ok1 or ok2 will be false
     if (!ok1 || !ok2) {
         qDebug() << "Input dialog canceled";
         return;
     }
-
     QString folderPath = QFileDialog::getExistingDirectory(this, tr("Select Root Directory to Save Images"));
-
     if (!folderPath.isEmpty()) {
         // Create subfolders
         QDir rootDir(folderPath);
         rootDir.mkdir("original_images");
         rootDir.mkdir("groundtruth");
-
         // Specify the paths to the subfolders
         QString subfolder1Path = folderPath + "/original_images";
         QString subfolder2Path = folderPath + "/groundtruth";
-
         // Assuming you have two QVector<QVector<QVector<double>>> members named 'data1' and 'data2'
         for(int z = startValue; z < endValue; z+=step) {
             QImage image1 = convertToImage<std::complex<double>>(ultrasound_Cscan_process::C_scan_AS, z);
             QImage image2 = convertToImage<bool>(this->C_scan_mask, z);
-
             QString image1FullPath = subfolder1Path + "/cscan_" + QString::number(z) + ".png";
             QString image2FullPath = subfolder2Path + "/cscan_mask" + QString::number(z) + ".png";
-
             image1.save(image1FullPath);
             image2.save(image2FullPath);
         }
     }
-
     qDebug() << "images saved";
 }
 
 void ultrasound_cscan_seg::closeDrawnArea() {
     const QVector<QLineF>& drawnLines = static_cast<CustomGraphicsScene*>(this->embeddedView->scene())->getDrawnLines();
-
     if (drawnLines.size() > 1) {
         // Close the area by connecting the last point to the first point
         QLineF closingLine(drawnLines.last().p2(), drawnLines.first().p1());
-
         // Convert the lines to a polygon and add it to the scene
         QPolygonF polygon;
         for (const QLineF &line : drawnLines) {
             polygon << line.p1();
         }
         polygon << closingLine.p1() << closingLine.p2();  // Add the closing line's points
-
         CustomGraphicsScene* scene = static_cast<CustomGraphicsScene*>(this->embeddedView->scene());
         scene->addPolygon(polygon, QPen(Qt::blue), QBrush(Qt::lightGray));
-
         // Create a mask image
         QRectF rect = this->embeddedView->scene()->sceneRect();
         QImage maskImage(rect.width(), rect.height(), QImage::Format_Grayscale8);
@@ -333,7 +321,6 @@ void ultrasound_cscan_seg::closeDrawnArea() {
         painter.end();
         // Save the mask image
         maskImage.save("mask.png");
-
         // save to mask data
         int sliceZ = this->scrollBarZ_page2->value();
         for (int x = 0; x < x_size; x++) {
@@ -345,7 +332,6 @@ void ultrasound_cscan_seg::closeDrawnArea() {
                     }
             }
         }
-
         qDebug() << "mask data saved";
     }
 }
@@ -355,7 +341,6 @@ QImage ultrasound_cscan_seg::convertToImage(const QVector<QVector<QVector<T>>>& 
     int x_size = data.size();
     int y_size = data[0].size();
     QImage image(x_size, y_size, QImage::Format_RGB32); // Adjust format as necessary
-
     // ********** find the maximum and minimum
     double maxValue = std::abs(data[0][0][z]);  // Initialize with first element
     double minValue = std::abs(data[0][0][z]);  // Initialize with first element
@@ -368,7 +353,6 @@ QImage ultrasound_cscan_seg::convertToImage(const QVector<QVector<QVector<T>>>& 
                 minValue = std::abs(value);
         }
     }
-
     JetColorMap colormap;
     for(int x = 0; x < x_size; ++x) {
         for(int y = 0; y < y_size; ++y) {
@@ -476,10 +460,10 @@ void ultrasound_cscan_seg::handleButton_multiSNR() {
                         }
                         for (int k = startValue; k <= endValue; k+=downsampleRate) {
                             if (selectedIndex == 0) {
-                                values << QString::number(1e10*Ascan[k].real());
+                                values << QString::number(1*Ascan[k].real());
                             }
                             else if (selectedIndex == 1) {
-                                values << QString::number(1e10*abs(Ascan[k]));
+                                values << QString::number(1*abs(Ascan[k]));
                             }
                             else if (selectedIndex == 2) {
                                 values << QString::number(atan2(Ascan[k].imag(), Ascan[k].real()));
@@ -572,7 +556,7 @@ void ultrasound_cscan_seg::segmentAndSaveData(const QVector<QVector<QVector<std:
                     }
                     for (int k = startValue; k <= endValue; ++k) {
                         if (selectedIndex == 0) {
-                            values << QString::number(1e10*Ascan[k].real());
+                            values << QString::number(Ascan[k].real());
                         }
                         else if (selectedIndex == 1) {
                             values << QString::number(abs(Ascan[k]));

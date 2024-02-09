@@ -33,6 +33,10 @@ public:
 
     void updateCscanPlotSelection(int index);
 
+    void onInitialValueChanged(int value, double max_value);
+    void onDecayRatioChanged(int value, double max_value);
+    void onGateSaveClicked();
+
 private:
     QCustomPlot *customPlot1;
     QCustomPlot *customPlot2;
@@ -49,6 +53,10 @@ private:
     QVBoxLayout *plot1l;
     QVBoxLayout *plot2l;
     QVBoxLayout *plot3l;
+    QVBoxLayout *mainVLayout;
+
+    QScrollBar *initialValueScrollBar;
+    QScrollBar *decayRatioScrollBar;
 
     QVector<QVector<QVector<std::complex<double>>>> C_scan_AS;
     QVector<QVector<QVector<double>>> C_scan_double;
@@ -56,6 +64,14 @@ private:
 
     void setupUI();
     void connectSignals();
+
+    QPushButton *gateSaveButton; // Add this line
+
+    QVector<double> signal;
+    QVector<double> time;
+    double currentInitialValue;
+    double currentDecayRate;
+    QVector<double> decayVector;
 
 };
 

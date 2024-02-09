@@ -4,18 +4,17 @@
 
 #include <QDebug>
 
-
 OrthosliceViewer::OrthosliceViewer(QWidget *parent,
                                    const QVector<QVector<QVector<std::complex<double>>>> &C_scan_AS,
                                    const QVector<QVector<QVector<double>>> &C_scan_double)
-    : QWidget(parent), C_scan_AS(C_scan_AS), C_scan_double(C_scan_double) {
+    : QWidget(parent), C_scan_AS(C_scan_AS), C_scan_double(C_scan_double), initialValueScrollBar(nullptr), decayRatioScrollBar(nullptr) {
     setupUI();
     connectSignals();
 }
 
 OrthosliceViewer::OrthosliceViewer(QWidget *parent,
                                    const QVector<QVector<QVector<double>>> &C_scan_double)
-    : QWidget(parent), C_scan_double(C_scan_double) {
+    : QWidget(parent), C_scan_double(C_scan_double), initialValueScrollBar(nullptr), decayRatioScrollBar(nullptr) {
     setupUI();
     connectSignals();
 }
@@ -59,11 +58,11 @@ void OrthosliceViewer::setupUI() {
     QHBoxLayout *hLayout = new QHBoxLayout();
     qDebug() << "hLayout created";
     // Create the main vertical layout
-    QVBoxLayout *mainVLayout = new QVBoxLayout(this);
+    this->mainVLayout = new QVBoxLayout(this);
     qDebug() << "mainVLayout created";
     // Add the horizontal layout to the main vertical layout
-    mainVLayout->addLayout(hLayout);
-    mainVLayout->addWidget(customPlot_Ascan);
+    this->mainVLayout->addLayout(hLayout);
+    this->mainVLayout->addWidget(customPlot_Ascan);
     // Create and populate vertical layouts for each plot
     QVBoxLayout *plot1l = new QVBoxLayout();
     plot1l->addWidget(this->scrollBarX);
@@ -81,7 +80,7 @@ void OrthosliceViewer::setupUI() {
     hLayout->addLayout(plot3l);
     qDebug() << "Layouts added to hLayout";
     // Set the main layout for the widget
-    this->setLayout(mainVLayout);
+    this->setLayout(this->mainVLayout);
     qDebug() << "mainVLayout set as layout for the widget";
     // Set the range of the QScrollBars based on the size of the data
     this->scrollBarX->setRange(0, this->C_scan_AS.size() - 1);
@@ -110,6 +109,11 @@ void OrthosliceViewer::setupUI() {
     plot3l->addWidget(sBZ_label);
     plot3l->addWidget(comboBox);
     plot3l->addWidget(this->customPlot3);
+
+    // Initialize the gate and save button
+    gateSaveButton = new QPushButton("Gate and Save Structure");
+    this->mainVLayout->addWidget(gateSaveButton); // Add it to the main vertical layout
+    connect(gateSaveButton, &QPushButton::clicked, this, &OrthosliceViewer::onGateSaveClicked);
     qDebug() << "finish add widgets";
     // After making changes to the layout, update the widget
     this->update(); // This will schedule a repaint event for the widget
@@ -289,10 +293,9 @@ void OrthosliceViewer::onCustomPlotClicked_Cscan(QMouseEvent* event) {
         int y = this->customPlot3->yAxis->pixelToCoord(event->pos().y());
         qDebug() << "Clicked at (" << x << "," << y << ")";
         // plot Ascan
-        QVector<double> signal = this->C_scan_double[x][y];
-        QVector<double> time;
-        for (int i = 0; i < signal.size(); ++i) {
-            time.append(i);
+        this->signal = this->C_scan_double[x][y];
+        for (int i = 0; i < this->signal.size(); ++i) {
+            this->time.append(i);
         }
         // calculate the analytic-signal
         QVector<std::complex<double>> Ascan_as;
@@ -333,15 +336,88 @@ void OrthosliceViewer::onCustomPlotClicked_Cscan(QMouseEvent* event) {
                 this->customPlot_Ascan->yAxis2,
                 SLOT(setRange(QCPRange)));
         // pass data points to graphs:
-        this->customPlot_Ascan->graph(0)->setData(time,
-                                                  signal);
+        this->customPlot_Ascan->graph(0)->setData(this->time,
+                                                  this->signal);
         // this->customPlot_Ascan->graph(1)->setData(time,
         //                                           Ascan_as_abs);
+        // Generate the Exponential Decay Vector
+        int decayVectorSize = this->signal.size(); // Matching the size of the signal vector
+        // Find the maximum of Ascan_as_abs
+        double maxValue = *std::max_element(Ascan_as_abs.begin(), Ascan_as_abs.end());
+        double decayRate = 0.5; // Example decay rate
+        decayVector.clear();
+        decayVector.resize(this->signal.size()); // Set the size of decayVector to match meanAscan
+        // Initialize vectors to store mean and std values, assuming all ascans have the same size
+        QVector<double> meanAscan(C_scan_AS.first().first().size(), 0);
+        QVector<double> stdAscan(C_scan_AS.first().first().size(), 0);
+        // Calculate the sum for mean calculation
+        for (int timeInstant = 0; timeInstant < meanAscan.size(); ++timeInstant) {
+            double sum = 0;
+            int count = 0;
+            for (const auto& xyPlane : C_scan_AS) {
+                for (const auto& xLine : xyPlane) {
+                    sum += abs(xLine[timeInstant]); // Ensure abs() is valid for your data type
+                    ++count;
+                }
+            }
+            meanAscan[timeInstant] = sum / count;
+        }
+        // Step 2: Calculate Standard Deviation for Each Time Instant
+        for (int timeInstant = 0; timeInstant < meanAscan.size(); ++timeInstant) {
+            double varianceSum = 0;
+            int count = 0;
+            for (const auto& xyPlane : C_scan_AS) {
+                for (const auto& xLine : xyPlane) {
+                    double diff = abs(xLine[timeInstant]) - meanAscan[timeInstant];
+                    varianceSum += diff * diff;
+                    ++count;
+                }
+            }
+            double variance = varianceSum / count;
+            stdAscan[timeInstant] = sqrt(variance);
+            decayVector[timeInstant] = meanAscan[timeInstant] + 2 * stdAscan[timeInstant];
+        }
+        // Add a third graph for the Exponential Decay Vector
+        this->customPlot_Ascan->addGraph();
+        this->customPlot_Ascan->graph(2)->setPen(QPen(Qt::green)); // Set line color green for the third graph
+        this->customPlot_Ascan->graph(2)->setData(this->time, decayVector); // Use the same 'time' vector for x-axis
         this->customPlot_Ascan->rescaleAxes();
-
         // Allow user to drag axis ranges with mouse, zoom with mouse wheel and select graphs by clicking:
         this->customPlot_Ascan->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
         this->customPlot_Ascan->replot();
+        // Assuming 'this' is a QWidget or QMainWindow derivative
+        if (!initialValueScrollBar) {
+            initialValueScrollBar = new QScrollBar(Qt::Horizontal, this);
+            initialValueScrollBar->setRange(1, 100); // Adjust range as needed
+            connect(initialValueScrollBar, &QScrollBar::valueChanged, this, [this, maxValue](int newValue) {
+                this->onInitialValueChanged(newValue, maxValue);
+            });
+        }
+        if (!decayRatioScrollBar) {
+            decayRatioScrollBar = new QScrollBar(Qt::Horizontal, this);
+            decayRatioScrollBar->setRange(1, 100); // Decay ratio in percentage (1-100)
+            connect(decayRatioScrollBar, &QScrollBar::valueChanged, this, [this, maxValue](int newValue) {
+                this->onDecayRatioChanged(newValue, maxValue);
+            });
+        }
+        // Ensure scrollbars are not already part of any layout
+        bool scrollBarsAlreadyAdded = false;
+        QLayout *parentLayout = initialValueScrollBar->parentWidget()->layout();
+        if (parentLayout) {
+            for (int i = 0; i < parentLayout->count(); ++i) {
+                QWidget *widget = parentLayout->itemAt(i)->widget();
+                if (widget == initialValueScrollBar || widget == decayRatioScrollBar) {
+                    scrollBarsAlreadyAdded = true;
+                    break;
+                }
+            }
+        }
+        if (!scrollBarsAlreadyAdded) {
+            QHBoxLayout *hScrollBarLayout = new QHBoxLayout();
+            hScrollBarLayout->addWidget(initialValueScrollBar);
+            hScrollBarLayout->addWidget(decayRatioScrollBar);
+            this->mainVLayout->addLayout(hScrollBarLayout);
+        }
     }
 }
 
@@ -350,3 +426,50 @@ void OrthosliceViewer::updateCscanPlotSelection(int index) {
     this->CscanPlotMode = index; // This should be a member variable to store the current selection
     qDebug() << index;
 }
+
+// ************* for time gate
+void OrthosliceViewer::onInitialValueChanged(int value, double max_value) {
+    currentInitialValue = static_cast<double>(value)/50;
+    // Regenerate the exponential decay vector
+    QVector<double> decayVector = createExponentialDecayVector(this->signal.size(), currentInitialValue * max_value, currentDecayRate);
+    // Update the graph
+    this->customPlot_Ascan->graph(2)->setData(this->time, decayVector);
+    this->customPlot_Ascan->replot();
+}
+
+void OrthosliceViewer::onDecayRatioChanged(int value, double max_value) {
+    currentDecayRate = static_cast<double>(value) / 100.0; // Convert to a fraction
+    // Regenerate the exponential decay vector
+    QVector<double> decayVector = createExponentialDecayVector(this->signal.size(), max_value, currentDecayRate);
+    // Update the graph
+    this->customPlot_Ascan->graph(2)->setData(time, decayVector);
+    this->customPlot_Ascan->replot();
+}
+
+void OrthosliceViewer::onGateSaveClicked() {
+    QFile file("gatedData.csv");
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        qDebug() << "Error opening file for writing";
+        return;
+    }
+    QTextStream out(&file);
+    out << this->C_scan_AS.size() << "," << this->C_scan_AS[0].size() << "," << this->C_scan_AS[0][0].size() << "\n";
+    for (int i = 0; i < this->C_scan_AS.size(); ++i) {
+        for (int j = 0; j < this->C_scan_AS[i].size(); ++j) { // Ensuring to use dynamic size of second dimension
+            const QVector<std::complex<double>>& Ascan = this->C_scan_AS[i][j];
+            QStringList values;
+            for (int k = 0; k < Ascan.size(); ++k) {
+                double Ascan_abs = std::abs(Ascan[k]); // Correctly computing the absolute value
+                if (Ascan_abs < this->decayVector[k]) { // Corrected indexing
+                    values << QString::number(0);
+                } else {
+                    values << QString::number(Ascan_abs);
+                }
+            }
+            out << values.join(',') << "\n";
+        }
+    }
+    file.close();
+    qDebug() << "Data saved to gatedData.csv";
+}
+
