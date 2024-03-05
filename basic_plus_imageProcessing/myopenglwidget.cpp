@@ -6,6 +6,7 @@
 #include <QCheckBox>
 
 #include "..\basic_read\utils.h"
+#include "graphwindow.h"
 
 // Adjust these values to position the axes at a desired location in the scene
 float axisOffsetX = 1.5f;
@@ -28,19 +29,24 @@ GLuint axisVAO, axisVBO;
 
 // Constructor
 MyOpenGLWidget::MyOpenGLWidget(QWidget *parent)
-    : QOpenGLWidget(parent), m_program(nullptr), viewAngle(45.0f), visibilityThreshold(0.5f), useDenoisedData(false) {
+    : QOpenGLWidget(parent), m_program(nullptr), viewAngle_x(45.0f), viewAngle_y(45.0f), visibilityThreshold(0.5f), useDenoisedData(false) {
 
     // Initialize the scrollbar for adjusting the view angle
-    QScrollBar *angleScrollBar = new QScrollBar(Qt::Horizontal, this);
-    angleScrollBar->setRange(0, 360); // Range of angles
-    angleScrollBar->setValue(45); // Initial angle
+    QScrollBar *angleScrollBar_x = new QScrollBar(Qt::Horizontal, this);
+    angleScrollBar_x->setRange(0, 360); // Range of angles
+    angleScrollBar_x->setValue(45); // Initial angle
+    QScrollBar *angleScrollBar_y = new QScrollBar(Qt::Horizontal, this);
+    angleScrollBar_y->setRange(0, 360); // Range of angles
+    angleScrollBar_y->setValue(45); // Initial angle
 
     // Connect the scrollbar's signal to the slot for angle change
-    connect(angleScrollBar, &QScrollBar::valueChanged, this, &MyOpenGLWidget::setViewAngle);
+    connect(angleScrollBar_x, &QScrollBar::valueChanged, this, &MyOpenGLWidget::setViewAngle_x);
+    connect(angleScrollBar_y, &QScrollBar::valueChanged, this, &MyOpenGLWidget::setViewAngle_y);
 
     // Layout to add scrollbar below the OpenGL widget
     QVBoxLayout *layout = new QVBoxLayout(this);
-    layout->addWidget(angleScrollBar);
+    layout->addWidget(angleScrollBar_x);
+    layout->addWidget(angleScrollBar_y);
     layout->setAlignment(Qt::AlignBottom);
 
     // Initialize the scrollbar for setting the visibility threshold
@@ -69,8 +75,12 @@ void MyOpenGLWidget::toggleDenoisedData(int state) {
 }
 
 // Slot to update the view angle
-void MyOpenGLWidget::setViewAngle(int angle) {
-    this->viewAngle = angle;
+void MyOpenGLWidget::setViewAngle_x(int angle) {
+    this->viewAngle_x = angle;
+    update(); // Trigger a repaint
+}
+void MyOpenGLWidget::setViewAngle_y(int angle) {
+    this->viewAngle_y = angle;
     update(); // Trigger a repaint
 }
 
@@ -157,7 +167,6 @@ void MyOpenGLWidget::initializeGL() {
 void MyOpenGLWidget::resizeGL(int w, int h) {
     // Calculate aspect ratio
     qreal aspect = qreal(w) / qreal(h ? h : 1);
-
     // Set near plane to 0.1, far plane to 100.0, field of view 45 degrees
     const qreal zNear = 0.1, zFar = 100.0, fov = 45.0;
 
@@ -173,23 +182,22 @@ void MyOpenGLWidget::paintGL() {
     // Clear the buffer
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // Set clear color to white
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear color and depth buffers
-    glPointSize(2.0f); // Set the point size
+    glPointSize(5.0f); // Set the point size
 
     m_program->bind(); // Bind your shader program
     // Set up transformation matrices
     QMatrix4x4 model;
     model.translate(0.0f, 0.0f, -2.0f);
-    model.rotate(this->viewAngle, 0.0f, 1.0f, 0.0f); // Rotate around the y-axis using the scrollbar angle
+    model.rotate(this->viewAngle_x, 0.0f, 1.0f, 0.0f); // Rotate around the y-axis using the scrollbar angle
+    model.rotate(this->viewAngle_y, 1.0f, 0.0f, 0.0f); // Rotate around the y-axis using the scrollbar angle
 
     QMatrix4x4 view;
     view.translate(0.0f, 0.0f, -3.0f);
 
     m_program->setUniformValue("model", model);
     m_program->setUniformValue("view", view);
-
     // Choose the data set based on the useDenoisedData flag
     const QVector<GLfloat>& currentVertexData = this->useDenoisedData ? vertexData_denoise : vertexData;
-
 
     // Draw the point cloud or other objects
     glBindVertexArray(VAO);
@@ -201,12 +209,10 @@ void MyOpenGLWidget::paintGL() {
         }
     }
     glBindVertexArray(0); // Unbind the VAO
-
     // Draw the axes
     glBindVertexArray(axisVAO); // Ensure you have created this VAO and uploaded the axis vertices
     glDrawArrays(GL_LINES, 0, 6); // 6 vertices total for the 3 lines (2 per line)
     glBindVertexArray(0); // Unbind the axis VAO
-
     m_program->release(); // Release the shader program
 }
 
@@ -217,10 +223,8 @@ void MyOpenGLWidget::convertStructureToVertices(const QVector<QVector<QVector<do
     int sizeX = structure.size();
     int sizeY = sizeX > 0 ? structure[0].size() : 0;
     int sizeZ = (sizeX > 0 && sizeY > 0) ? structure[0][0].size() : 0;
-
     double minVal = std::numeric_limits<double>::max();
     double maxVal = std::numeric_limits<double>::lowest();
-
     // Find the min and max values in the dataset
     for (const auto& layer : structure) {
         for (const auto& row : layer) {
@@ -250,8 +254,7 @@ void MyOpenGLWidget::convertStructureToVertices(const QVector<QVector<QVector<do
             }
         }
     }
-
-    QVector<QVector<QVector<double>>> structure_dn = denoise3D(structure, 6);
+    QVector<QVector<QVector<double>>> structure_dn = denoise3D(structure, 3);
     // Find the min and max values in the dataset
     for (const auto& layer : structure_dn) {
         for (const auto& row : layer) {
@@ -281,6 +284,39 @@ void MyOpenGLWidget::convertStructureToVertices(const QVector<QVector<QVector<do
             }
         }
     }
+    // The 2D QVector to store indices and values.
+    QVector<QVector<double>> indices;
+    QVector<QVector<double>> values;
+    for (int i = 0; i < structure_dn.size(); ++i) {
+        QVector<double> tempIndices;
+        QVector<double> tempValues;
+        for (int j = 0; j < structure_dn[i].size(); ++j) {
+            for (int k = 0; k < structure_dn[i][j].size(); ++k) {
+                structure_dn[i][j][k] = structure_dn[i][j][k]/maxVal;
+                if (structure_dn[i][j][k] > 0.5) {
+                    tempIndices.append(static_cast<double>(k)); // Save the index along the 3rd dimension.
+                    tempValues.append(structure_dn[i][j][k]); // Save the value.
+                    break; // Move to the next 2D vector after finding the first value > 0.9.
+                }
+            }
+            // If no value > 0.9 was found in the 3rd dimension, append -1 or another placeholder.
+            if(tempIndices.size() == j) {
+                tempIndices.append(-1); // Placeholder for not found.
+                tempValues.append(0.0); // Placeholder value, assuming 0 is not a valid value in your context.
+            }
+        }
+        indices.append(tempIndices);
+        values.append(tempValues);
+    }
+    // // Debug output, replace with your method of saving or further processing.
+    // qDebug() << "Indices:" << indices;
+    // qDebug() << "Values:" << values;
+    // Now save them to CSV files
+    saveValuesToCSV(indices, "indices.csv");
+    saveValuesToCSV(values, "values.csv");
+    GraphWindow *graphWindow = new GraphWindow();
+    graphWindow->setData(indices); // Set the data to be visualized
+    graphWindow->show(); // Show the graph window
 }
 
 QVector3D MyOpenGLWidget::mapValueToColor(double value, double minVal, double maxVal) {

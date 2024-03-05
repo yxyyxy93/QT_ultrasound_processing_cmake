@@ -17,7 +17,8 @@ protected:
     void initializeGL() override;
     void resizeGL(int w, int h) override;
     void paintGL() override;
-    void setViewAngle(int angle);
+    void setViewAngle_x(int angle);
+    void setViewAngle_y(int angle);
     void setVisibilityThreshold(int value);
     void toggleDenoisedData(int state);
 
@@ -30,7 +31,8 @@ private:
     QVector<GLfloat> vertexData;
     QVector<GLfloat> vertexData_denoise;
 
-    double viewAngle;
+    double viewAngle_x;
+    double viewAngle_y;
     double visibilityThreshold;
     bool useDenoisedData;
 };

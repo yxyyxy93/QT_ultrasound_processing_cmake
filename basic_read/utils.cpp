@@ -470,28 +470,28 @@ QVector<QVector<QVector<double>>> denoise3D(const QVector<QVector<QVector<double
             }
         }
     }
-    // average filter
-    QVector<QVector<QVector<double>>> result_ave(sizeX, QVector<QVector<double>>(sizeY, QVector<double>(sizeZ, 0.0)));
-    for (int x = kHalf; x < sizeX - kHalf; ++x) {
-        for (int y = kHalf; y < sizeY - kHalf; ++y) {
-            for (int z = kHalf; z < sizeZ - kHalf; ++z) {
-                double sum = 0.0;
-                int count = 0;
-                // Iterate through the neighboring cells including the cell itself
-                for (int i = -kHalf; i <= kHalf; ++i) {
-                    for (int j = -kHalf; j <= kHalf; ++j) {
-                        for (int k = -kHalf; k <= kHalf; ++k) {
-                            sum += result[x + i][y + j][z + k];
-                            ++count;
-                        }
-                    }
-                }
-                result_ave[x][y][z] = sum / count; // Average value
-            }
-        }
-    }
+    // // average filter
+    // QVector<QVector<QVector<double>>> result_ave(sizeX, QVector<QVector<double>>(sizeY, QVector<double>(sizeZ, 0.0)));
+    // for (int x = kHalf; x < sizeX - kHalf; ++x) {
+    //     for (int y = kHalf; y < sizeY - kHalf; ++y) {
+    //         for (int z = kHalf; z < sizeZ - kHalf; ++z) {
+    //             double sum = 0.0;
+    //             int count = 0;
+    //             // Iterate through the neighboring cells including the cell itself
+    //             for (int i = -kHalf; i <= kHalf; ++i) {
+    //                 for (int j = -kHalf; j <= kHalf; ++j) {
+    //                     for (int k = -kHalf; k <= kHalf; ++k) {
+    //                         sum += result[x + i][y + j][z + k];
+    //                         ++count;
+    //                     }
+    //                 }
+    //             }
+    //             result_ave[x][y][z] = sum / count; // Average value
+    //         }
+    //     }
+    // }
     // Handle the borders separately if needed (can be left as is, zero-padded, or mirrored)
-    return result_ave;
+    return result;
 }
 
 
@@ -654,4 +654,33 @@ QVector<double> createExponentialDecayVector(int size, double initialValue, doub
         vector.append(value);
     }
     return vector;
+}
+
+/********************** save to csv 2d *************/
+void saveToCSV(const QVector<QVector<int>>& indices, const QString& filePath) {
+    QFile file(filePath);
+    if (file.open(QFile::WriteOnly | QFile::Truncate)) {
+        QTextStream stream(&file);
+        for (const auto& row : indices) {
+            QStringList strList;
+            for (int val : row) {
+                strList << QString::number(val);
+            }
+            stream << strList.join(",") << "\n";
+        }
+    }
+}
+
+void saveValuesToCSV(const QVector<QVector<double>>& values, const QString& filePath) {
+    QFile file(filePath);
+    if (file.open(QFile::WriteOnly | QFile::Truncate)) {
+        QTextStream stream(&file);
+        for (const auto& row : values) {
+            QStringList strList;
+            for (double val : row) {
+                strList << QString::number(val);
+            }
+            stream << strList.join(",") << "\n";
+        }
+    }
 }

@@ -54,9 +54,7 @@ ultrasound_cscan_seg::ultrasound_cscan_seg(QWidget *parent,
     // Add the horizontal layout to your existing vertical layout (layout3)
     this->layout3->addLayout(rowLayout);
     connect(selectFolderButton, &QPushButton::clicked, this, &ultrasound_cscan_seg::selectFolder);
-
     // connect(ui->yourSegmentButton, &QPushButton::clicked, this, &ultrasound_cscan_seg::handleButtonSegmentDataset);
-
     // ************
     // Check if the 'Add Noise' button already exists in the layout
     if (!widgetExistsInLayout<QPushButton>(this->layout3, "process(add noise, downsample, corp) and save")) {
@@ -114,7 +112,6 @@ ultrasound_cscan_seg::ultrasound_cscan_seg(QWidget *parent,
         this->layout3->addWidget(segmentButton);
         connect(segmentButton, &QPushButton::clicked, this, &ultrasound_cscan_seg::handleButtonSegmentDataset);
     }
-
     // ******************************* 4th page
     // Assuming tabWidget is your QTabWidget
     QWidget *page4 = new QWidget();
@@ -429,7 +426,8 @@ void ultrasound_cscan_seg::handleButton_multiSNR() {
             if (ok) {
                 // Add the ComboBox to the layout
                 // Create the new filename by appending the double value
-                QString newFileName = filename + "/_snr_" + QString::number(snrDb, 'f', 2) + "_" + selectedOption + ".csv"; // 'f': fixed-point notation, '2': two decimal places
+                QString newFileName = filename + "/_snr_" + QString::number(snrDb, 'f', 2) + "_"
+                                      + selectedOption + "_" + QString::number(startValue) + ".csv"; // 'f': fixed-point notation, '2': two decimal places
                 qDebug() << "New file path:" << newFileName;
                 QFile file(newFileName);
                 if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -591,6 +589,7 @@ void ultrasound_cscan_seg::processFolder(const QString &path) {
     QDir dir(path);
     // Get the list of all directories and files, excluding '.' and '..'
     QFileInfoList list = dir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot, QDir::DirsFirst);
+    qDebug() << list;
     for (const QFileInfo &fileInfo : list) {
         if (fileInfo.isDir()) {
             // Process only the first-level subdirectories

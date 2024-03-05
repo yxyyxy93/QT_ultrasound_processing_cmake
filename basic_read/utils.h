@@ -162,3 +162,7 @@ QVector<std::complex<double>> applyFFT1D(QVector<double>& data);
 // ******************** time gate *****************
 // Function to create a QVector<double> with exponential attenuation
 QVector<double> createExponentialDecayVector(int size, double initialValue, double decayRate);
+
+/********************** save to csv 2d *************/
+void saveToCSV(const QVector<QVector<int>>& indices, const QString& filePath);
+void saveValuesToCSV(const QVector<QVector<double>>& values, const QString& filePath);

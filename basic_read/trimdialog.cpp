@@ -25,9 +25,9 @@ TrimDialog::TrimDialog(QWidget *parent) : QDialog(parent) {
     endKSpinBox->setMaximum(50000);
 
     // Add the spin boxes to the layout
-    layout->addRow("Start I", startISpinBox);
+    layout->addRow("Start I （x）", startISpinBox);
     layout->addRow("End I", endISpinBox);
-    layout->addRow("Start J", startJSpinBox);
+    layout->addRow("Start J (y)", startJSpinBox);
     layout->addRow("End J", endJSpinBox);
     layout->addRow("Start K", startKSpinBox);
     layout->addRow("End K", endKSpinBox);

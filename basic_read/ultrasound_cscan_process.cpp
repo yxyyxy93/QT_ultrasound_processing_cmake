@@ -281,10 +281,8 @@ void ultrasound_Cscan_process::processFile(const QFileInfo &fileInfo) {
             for (int j = 0; j < y; ++j) {
                 QString line = in.readLine();
                 QStringList values = line.split(',');
-
                 // Resize the third dimension based on the actual number of values
                 this->C_scan_double[i][j].resize(values.size());
-
                 for (int index = 0; index < values.size(); ++index) {
                     this->C_scan_double[i][j][index] = values[index].toDouble();
                 }
@@ -611,7 +609,7 @@ void ultrasound_Cscan_process::calculateSurface() {
             //                                                    [](std::complex<double> a, std::complex<double> b) {
             //                                                        return std::abs(a) < std::abs(b);
             //                                                    });
-            // tailored for exp.
+            // *********** tailored for exp. *************** !
             double threshold_val = 0.5;
             auto maxElementIndex = std::find_if(Ascan_as.begin(), Ascan_as.end(),
                                                 [threshold_val](std::complex<double> a) {

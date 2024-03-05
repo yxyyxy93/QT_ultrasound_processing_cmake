@@ -109,7 +109,6 @@ void OrthosliceViewer::setupUI() {
     plot3l->addWidget(sBZ_label);
     plot3l->addWidget(comboBox);
     plot3l->addWidget(this->customPlot3);
-
     // Initialize the gate and save button
     gateSaveButton = new QPushButton("Gate and Save Structure");
     this->mainVLayout->addWidget(gateSaveButton); // Add it to the main vertical layout
@@ -249,9 +248,7 @@ void OrthosliceViewer::updatePlot() {
             }
         }
     }
-    //
     map3->setGradient(QCPColorGradient::gpJet);
-
     // Rescale the color map data range to fit the new data
     map1->rescaleDataRange(true);
     map2->rescaleDataRange(true);
@@ -348,13 +345,13 @@ void OrthosliceViewer::onCustomPlotClicked_Cscan(QMouseEvent* event) {
         decayVector.clear();
         decayVector.resize(this->signal.size()); // Set the size of decayVector to match meanAscan
         // Initialize vectors to store mean and std values, assuming all ascans have the same size
-        QVector<double> meanAscan(C_scan_AS.first().first().size(), 0);
-        QVector<double> stdAscan(C_scan_AS.first().first().size(), 0);
+        QVector<double> meanAscan(this->C_scan_double.first().first().size(), 0);
+        QVector<double> stdAscan(this->C_scan_double.first().first().size(), 0);
         // Calculate the sum for mean calculation
         for (int timeInstant = 0; timeInstant < meanAscan.size(); ++timeInstant) {
             double sum = 0;
             int count = 0;
-            for (const auto& xyPlane : C_scan_AS) {
+            for (const auto& xyPlane : this->C_scan_double) {
                 for (const auto& xLine : xyPlane) {
                     sum += abs(xLine[timeInstant]); // Ensure abs() is valid for your data type
                     ++count;
@@ -366,7 +363,7 @@ void OrthosliceViewer::onCustomPlotClicked_Cscan(QMouseEvent* event) {
         for (int timeInstant = 0; timeInstant < meanAscan.size(); ++timeInstant) {
             double varianceSum = 0;
             int count = 0;
-            for (const auto& xyPlane : C_scan_AS) {
+            for (const auto& xyPlane : this->C_scan_double) {
                 for (const auto& xLine : xyPlane) {
                     double diff = abs(xLine[timeInstant]) - meanAscan[timeInstant];
                     varianceSum += diff * diff;
@@ -375,12 +372,12 @@ void OrthosliceViewer::onCustomPlotClicked_Cscan(QMouseEvent* event) {
             }
             double variance = varianceSum / count;
             stdAscan[timeInstant] = sqrt(variance);
-            decayVector[timeInstant] = meanAscan[timeInstant] + 2 * stdAscan[timeInstant];
+            decayVector[timeInstant] = meanAscan[timeInstant] + 1 * stdAscan[timeInstant];
         }
         // Add a third graph for the Exponential Decay Vector
         this->customPlot_Ascan->addGraph();
         this->customPlot_Ascan->graph(2)->setPen(QPen(Qt::green)); // Set line color green for the third graph
-        this->customPlot_Ascan->graph(2)->setData(this->time, decayVector); // Use the same 'time' vector for x-axis
+        // this->customPlot_Ascan->graph(2)->setData(this->time, decayVector); // Use the same 'time' vector for x-axis
         this->customPlot_Ascan->rescaleAxes();
         // Allow user to drag axis ranges with mouse, zoom with mouse wheel and select graphs by clicking:
         this->customPlot_Ascan->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
@@ -447,23 +444,31 @@ void OrthosliceViewer::onDecayRatioChanged(int value, double max_value) {
 }
 
 void OrthosliceViewer::onGateSaveClicked() {
-    QFile file("gatedData.csv");
+    // Use QFileDialog to get the file name from the user
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save Data"), "", tr("CSV Files (*.csv);;All Files (*)"));
+    // Check if the user canceled the dialog
+    if (fileName.isEmpty()) {
+        return; // Exit if no file name was provided
+    }
+
+    QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         qDebug() << "Error opening file for writing";
         return;
     }
+
     QTextStream out(&file);
-    out << this->C_scan_AS.size() << "," << this->C_scan_AS[0].size() << "," << this->C_scan_AS[0][0].size() << "\n";
-    for (int i = 0; i < this->C_scan_AS.size(); ++i) {
-        for (int j = 0; j < this->C_scan_AS[i].size(); ++j) { // Ensuring to use dynamic size of second dimension
-            const QVector<std::complex<double>>& Ascan = this->C_scan_AS[i][j];
+    out << this->C_scan_double.size() << "," << this->C_scan_double[0].size() << "," << this->C_scan_double[0][0].size() << "\n";
+    for (int i = 0; i < this->C_scan_double.size(); ++i) {
+        for (int j = 0; j < this->C_scan_double[i].size(); ++j) { // Ensuring to use dynamic size of second dimension
+            const QVector<double>& Ascan = this->C_scan_double[i][j];
             QStringList values;
             for (int k = 0; k < Ascan.size(); ++k) {
                 double Ascan_abs = std::abs(Ascan[k]); // Correctly computing the absolute value
                 if (Ascan_abs < this->decayVector[k]) { // Corrected indexing
                     values << QString::number(0);
                 } else {
-                    values << QString::number(Ascan_abs);
+                    values << QString::number((Ascan_abs - this->decayVector[k])/Ascan_abs);
                 }
             }
             out << values.join(',') << "\n";
