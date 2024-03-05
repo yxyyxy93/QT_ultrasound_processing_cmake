@@ -234,11 +234,13 @@ void MyOpenGLWidget::convertStructureToVertices(const QVector<QVector<QVector<do
             }
         }
     }
+    int step = 3; // Step size of 3
     // Now, minVal and maxVal can be used in the mapValueToColor function
-    for (int x = 0; x < sizeX; ++x) {
-        for (int y = 0; y < sizeY; ++y) {
-            for (int z = 0; z < sizeZ; ++z) {
+    for (int x = 0; x < sizeX; x += step) { // Increment x by step
+        for (int y = 0; y < sizeY; y += step) { // Increment y by step
+            for (int z = 0; z < sizeZ; z += step) { // Increment z by step
                 // Normalize the indices to the range [-1, 1]
+                // Adjust calculation to account for downsampling
                 float posX = 2.0f * x / (sizeX - 1) - 1.0f;
                 float posY = 2.0f * y / (sizeY - 1) - 1.0f;
                 float posZ = 2.0f * z / (sizeZ - 1) - 1.0f;
@@ -246,7 +248,8 @@ void MyOpenGLWidget::convertStructureToVertices(const QVector<QVector<QVector<do
                 this->vertexData.push_back(posX);
                 this->vertexData.push_back(posY);
                 this->vertexData.push_back(posZ);
-                // Add color data (for example, based on Z value)
+                // Assuming mapValueToColor is a function that maps a data value to a color
+                // And assuming structure[x][y][z] is valid and contains the data value you want to map
                 QVector3D color = mapValueToColor(structure[x][y][z], minVal, maxVal);
                 this->vertexData.push_back(color.x()); // R
                 this->vertexData.push_back(color.y()); // G
@@ -254,7 +257,7 @@ void MyOpenGLWidget::convertStructureToVertices(const QVector<QVector<QVector<do
             }
         }
     }
-    QVector<QVector<QVector<double>>> structure_dn = denoise3D(structure, 3);
+    QVector<QVector<QVector<double>>> structure_dn = denoise3D(structure, 1);
     // Find the min and max values in the dataset
     for (const auto& layer : structure_dn) {
         for (const auto& row : layer) {
@@ -265,9 +268,9 @@ void MyOpenGLWidget::convertStructureToVertices(const QVector<QVector<QVector<do
         }
     }
     // Now, minVal and maxVal can be used in the mapValueToColor function
-    for (int x = 0; x < sizeX; ++x) {
-        for (int y = 0; y < sizeY; ++y) {
-            for (int z = 0; z < sizeZ; ++z) {
+    for (int x = 0; x < sizeX; x += step) { // Increment x by step
+        for (int y = 0; y < sizeY; y += step) { // Increment y by step
+            for (int z = 0; z < sizeZ; z += step) { // Increment z by step
                 // Normalize the indices to the range [-1, 1]
                 float posX = 2.0f * x / (sizeX - 1) - 1.0f;
                 float posY = 2.0f * y / (sizeY - 1) - 1.0f;
@@ -293,7 +296,7 @@ void MyOpenGLWidget::convertStructureToVertices(const QVector<QVector<QVector<do
         for (int j = 0; j < structure_dn[i].size(); ++j) {
             for (int k = 0; k < structure_dn[i][j].size(); ++k) {
                 structure_dn[i][j][k] = structure_dn[i][j][k]/maxVal;
-                if (structure_dn[i][j][k] > 0.5) {
+                if (structure_dn[i][j][k] > 0.7) {
                     tempIndices.append(static_cast<double>(k)); // Save the index along the 3rd dimension.
                     tempValues.append(structure_dn[i][j][k]); // Save the value.
                     break; // Move to the next 2D vector after finding the first value > 0.9.

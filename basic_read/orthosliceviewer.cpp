@@ -376,8 +376,13 @@ void OrthosliceViewer::onCustomPlotClicked_Cscan(QMouseEvent* event) {
         }
         // Add a third graph for the Exponential Decay Vector
         this->customPlot_Ascan->addGraph();
-        this->customPlot_Ascan->graph(2)->setPen(QPen(Qt::green)); // Set line color green for the third graph
-        // this->customPlot_Ascan->graph(2)->setData(this->time, decayVector); // Use the same 'time' vector for x-axis
+        // Create a QPen object with the color green
+        QPen pen(Qt::green);
+        // Set the pen width to a larger size, for example, 3 pixels
+        pen.setWidth(5);
+        // Apply the pen to the third graph
+        this->customPlot_Ascan->graph(2)->setPen(pen);
+        this->customPlot_Ascan->graph(2)->setData(this->time, decayVector); // Use the same 'time' vector for x-axis
         this->customPlot_Ascan->rescaleAxes();
         // Allow user to drag axis ranges with mouse, zoom with mouse wheel and select graphs by clicking:
         this->customPlot_Ascan->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
