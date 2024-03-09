@@ -295,7 +295,7 @@ void MyOpenGLWidget::convertStructureToVertices(const QVector<QVector<QVector<do
         QVector<double> tempValues;
         for (int j = 0; j < structure_dn[i].size(); ++j) {
             for (int k = 0; k < structure_dn[i][j].size(); ++k) {
-                structure_dn[i][j][k] = structure_dn[i][j][k]/maxVal;
+                // structure_dn[i][j][k] = structure_dn[i][j][k]/maxVal;
                 if (structure_dn[i][j][k] > 0.7) {
                     tempIndices.append(static_cast<double>(k)); // Save the index along the 3rd dimension.
                     tempValues.append(structure_dn[i][j][k]); // Save the value.

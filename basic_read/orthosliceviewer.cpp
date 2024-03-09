@@ -127,7 +127,6 @@ void OrthosliceViewer::connectSignals() {
                      &OrthosliceViewer::updatePlot);
     QObject::connect(this->scrollBarZ, &QScrollBar::valueChanged, this,
                      &OrthosliceViewer::updatePlot);
-
     // Connect the scrollbar's valueChanged() signal to a slot that updates the label text
     connect(scrollBarX, &QScrollBar::valueChanged, [=](int value) {
         QString labelText = QString("Min: %1 Max: %2 Current: %3").
@@ -470,10 +469,11 @@ void OrthosliceViewer::onGateSaveClicked() {
             QStringList values;
             for (int k = 0; k < Ascan.size(); ++k) {
                 double Ascan_abs = std::abs(Ascan[k]); // Correctly computing the absolute value
-                if (Ascan_abs < this->decayVector[k]) { // Corrected indexing
+                if (Ascan_abs < 2*this->decayVector[k]) { // Corrected indexing
                     values << QString::number(0);
                 } else {
-                    values << QString::number((Ascan_abs - this->decayVector[k])/Ascan_abs);
+                    // values << QString::number((Ascan_abs - this->decayVector[k])/Ascan_abs);
+                    values << QString::number(20 * log10(Ascan_abs/this->decayVector[k]));
                 }
             }
             out << values.join(',') << "\n";

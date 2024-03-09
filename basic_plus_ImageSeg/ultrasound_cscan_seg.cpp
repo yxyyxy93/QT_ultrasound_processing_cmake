@@ -387,17 +387,30 @@ void ultrasound_cscan_seg::handleButton_multiSNR() {
         qDebug() << "Invalid cropping range. Start should be less than End.";
         return;
     }
-    QString filename = this->fn;
-    // Remove '.csv' from the base name
-    int dotIndex = filename.indexOf('.'); // Find the index of the first dot
-    if (dotIndex != -1) { // Check if a dot was found
-        filename = filename.left(dotIndex);
-        // Use modifiedString as needed
+    QString originalFilePath = this->fn;
+    // Step 1: Remove the '.csv' extension
+    int dotIndex = originalFilePath.lastIndexOf('.'); // Find the last dot for the extension
+    QString filePathWithoutExtension;
+    if (dotIndex != -1) {
+        filePathWithoutExtension = originalFilePath.left(dotIndex);
     } else {
-        // Handle the case where there's no dot in the string
+        // If no extension found, use the original path as is
+        filePathWithoutExtension = originalFilePath;
     }
+    // Step 2: Find the last slash to separate the directory path and the filename
+    int lastSlashIndex = filePathWithoutExtension.lastIndexOf('/');
+    QString directoryPath = filePathWithoutExtension.left(lastSlashIndex); // Contains the path without the filename
+    QString filename = filePathWithoutExtension.mid(lastSlashIndex); // Contains the filename and initial slash
+    // Find the second-to-last slash to determine where to insert 'sim_data'
+    int secondToLastSlashIndex = directoryPath.lastIndexOf('/', lastSlashIndex - 1);
+    QString pathBeforeInsertion = directoryPath.left(secondToLastSlashIndex);
+    QString pathAfterInsertion = directoryPath.mid(secondToLastSlashIndex);
+    // Step 3: Insert 'sim_data' into the directory path
+    QString newDirectoryPath = pathBeforeInsertion + "/sim_data" + pathAfterInsertion;
+
+
     // Create the directory
-    QDir dir(filename); // Set the directory to 'filename'
+    QDir dir(newDirectoryPath); // Set the directory to 'filename'
     if (!dir.exists()) {
         if (!dir.mkpath(".")) { // Create the directory if it doesn't exist
             qWarning() << "Could not create directory:" << filename;
@@ -426,7 +439,7 @@ void ultrasound_cscan_seg::handleButton_multiSNR() {
             if (ok) {
                 // Add the ComboBox to the layout
                 // Create the new filename by appending the double value
-                QString newFileName = filename + "/_snr_" + QString::number(snrDb, 'f', 2) + "_"
+                QString newFileName = newDirectoryPath + "/_snr_" + QString::number(snrDb, 'f', 2) + "_"
                                       + selectedOption + "_" + QString::number(startValue) + ".csv"; // 'f': fixed-point notation, '2': two decimal places
                 qDebug() << "New file path:" << newFileName;
                 QFile file(newFileName);
