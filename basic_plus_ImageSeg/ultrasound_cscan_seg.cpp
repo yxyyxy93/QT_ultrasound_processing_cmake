@@ -412,7 +412,6 @@ void ultrasound_cscan_seg::handleButton_multiSNR() {
     // Step 3: Insert 'sim_data' into the directory path
     QString newDirectoryPath = pathBeforeInsertion + "/sim_data"  + "_" + selectedOption
                                + "_" + QString::number(startValue) + pathAfterInsertion;
-
     // Create the directory
     QDir dir(newDirectoryPath); // Set the directory to 'filename'
     if (!dir.exists()) {
@@ -616,13 +615,35 @@ void ultrasound_cscan_seg::processFolder(const QString &path) {
                 this->C_scan_double.clear();
                 this->C_scan_AS.clear();
                 ultrasound_Cscan_process::processFile(fileInfo);
-                // align the surface
-                // ultrasound_Cscan_process::calculateSurface();
-                // read downsample ratio
-                // int min_idx = 100*downsampleRate; // manual setting, times the ds factor
-                // ultrasound_Cscan_process::handleButton_alignsurface(min_idx);
                 // save
                 this->handleButton_multiSNR();
+            }
+            // ************ find all structures and copy
+            subList = subDir.entryInfoList(QStringList() << "structure_*.csv", QDir::Files);
+            for (const QFileInfo &subFileInfo : subList) {
+                QString originalFilePath = subFileInfo.absoluteFilePath();
+                int dotIndex = originalFilePath.lastIndexOf('.'); // Find the last dot for the extension
+                QString filePathWithoutExtension;
+                if (dotIndex != -1) {
+                    filePathWithoutExtension = originalFilePath.left(dotIndex);
+                } else {
+                    // If no extension found, use the original path as is
+                    filePathWithoutExtension = originalFilePath;
+                }
+                // Step 2: Find the last slash to separate the directory path and the filename
+                int lastSlashIndex = filePathWithoutExtension.lastIndexOf('/');
+                QString directoryPath = filePathWithoutExtension.left(lastSlashIndex); // Contains the path without the filename
+                QString filename = filePathWithoutExtension.mid(lastSlashIndex); // Contains the filename and initial slash
+                // Find the second-to-last slash to determine where to insert 'sim_data'
+                int secondToLastSlashIndex = directoryPath.lastIndexOf('/', lastSlashIndex - 1);
+                QString pathBeforeInsertion = directoryPath.left(secondToLastSlashIndex);
+                QString pathAfterInsertion = directoryPath.mid(secondToLastSlashIndex);
+                QString newDirectoryPath = pathBeforeInsertion + "/sim_struct" + pathAfterInsertion;
+                // Ensure the new directory exists
+                QDir().mkpath(newDirectoryPath);
+                // Copy the file to the new location
+                QString newFilePath = newDirectoryPath + "/" + filename + ".csv"; // Re-add the extension
+                QFile::copy(originalFilePath, newFilePath);
             }
         }
     }
