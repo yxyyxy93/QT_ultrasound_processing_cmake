@@ -387,6 +387,10 @@ void ultrasound_cscan_seg::handleButton_multiSNR() {
         qDebug() << "Invalid cropping range. Start should be less than End.";
         return;
     }
+    // check the saving patterns
+    int selectedIndex = this->myComboBox_savepattern->currentIndex();
+    QString selectedOption = this->myComboBox_savepattern->itemText(selectedIndex);
+    // define file path
     QString originalFilePath = this->fn;
     // Step 1: Remove the '.csv' extension
     int dotIndex = originalFilePath.lastIndexOf('.'); // Find the last dot for the extension
@@ -406,8 +410,8 @@ void ultrasound_cscan_seg::handleButton_multiSNR() {
     QString pathBeforeInsertion = directoryPath.left(secondToLastSlashIndex);
     QString pathAfterInsertion = directoryPath.mid(secondToLastSlashIndex);
     // Step 3: Insert 'sim_data' into the directory path
-    QString newDirectoryPath = pathBeforeInsertion + "/sim_data" + pathAfterInsertion;
-
+    QString newDirectoryPath = pathBeforeInsertion + "/sim_data"  + "_" + selectedOption
+                               + "_" + QString::number(startValue) + pathAfterInsertion;
 
     // Create the directory
     QDir dir(newDirectoryPath); // Set the directory to 'filename'
@@ -428,9 +432,6 @@ void ultrasound_cscan_seg::handleButton_multiSNR() {
             qDebug() << "File deleted:" << file;
         }
     }
-    // check the saving patterns
-    int selectedIndex = this->myComboBox_savepattern->currentIndex();
-    QString selectedOption = this->myComboBox_savepattern->itemText(selectedIndex);
     if (SNRInput) {
         QStringList snrValuesStr = SNRInput->text().split(',');
         foreach (const QString &snrStr, snrValuesStr) {  // Process each SNR value
@@ -439,8 +440,7 @@ void ultrasound_cscan_seg::handleButton_multiSNR() {
             if (ok) {
                 // Add the ComboBox to the layout
                 // Create the new filename by appending the double value
-                QString newFileName = newDirectoryPath + "/_snr_" + QString::number(snrDb, 'f', 2) + "_"
-                                      + selectedOption + "_" + QString::number(startValue) + ".csv"; // 'f': fixed-point notation, '2': two decimal places
+                QString newFileName = newDirectoryPath + "/_snr_" + QString::number(snrDb, 'f', 2) + ".csv"; // 'f': fixed-point notation, '2': two decimal places
                 qDebug() << "New file path:" << newFileName;
                 QFile file(newFileName);
                 if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
