@@ -109,6 +109,14 @@ void OrthosliceViewer::setupUI() {
     plot3l->addWidget(sBZ_label);
     plot3l->addWidget(comboBox);
     plot3l->addWidget(this->customPlot3);
+    // Add ComboBox for selecting dB value
+    dBruleComboBox = new QComboBox();
+    dBruleComboBox->addItem("3 dB rule");
+    dBruleComboBox->addItem("6 dB rule");
+    dBruleComboBox->addItem("9 dB rule");
+    dBruleComboBox->addItem("12 dB rule");
+    this->mainVLayout->addWidget(dBruleComboBox); // Add it to the main vertical layout
+
     // Initialize the gate and save button
     gateSaveButton = new QPushButton("Gate and Save Structure");
     this->mainVLayout->addWidget(gateSaveButton); // Add it to the main vertical layout
@@ -247,6 +255,8 @@ void OrthosliceViewer::updatePlot() {
             }
         }
     }
+    map1->setGradient(QCPColorGradient::gpGrayscale);
+    map2->setGradient(QCPColorGradient::gpGrayscale);
     map3->setGradient(QCPColorGradient::gpJet);
     // Rescale the color map data range to fit the new data
     map1->rescaleDataRange(true);
@@ -422,13 +432,13 @@ void OrthosliceViewer::onCustomPlotClicked_Cscan(QMouseEvent* event) {
     }
 }
 
-// *********** for C-scan settings
+// *********** for C-scan settings **********************
 void OrthosliceViewer::updateCscanPlotSelection(int index) {
     this->CscanPlotMode = index; // This should be a member variable to store the current selection
     qDebug() << index;
 }
 
-// ************* for time gate
+// ************* for time gate *************************
 void OrthosliceViewer::onInitialValueChanged(int value, double max_value) {
     currentInitialValue = static_cast<double>(value)/50;
     // Regenerate the exponential decay vector
@@ -448,6 +458,11 @@ void OrthosliceViewer::onDecayRatioChanged(int value, double max_value) {
 }
 
 void OrthosliceViewer::onGateSaveClicked() {
+    // Get the selected mode
+    int dbRuleIndex = dBruleComboBox->currentIndex();
+    int dbValue = (dbRuleIndex + 1) * 3; // Assuming 3, 6, 9, 12 dB are the selected values
+    double amplitudeRatio = pow(10.0, dbValue / 20.0);
+
     // Use QFileDialog to get the file name from the user
     QString fileName = QFileDialog::getSaveFileName(this, tr("Save Data"), "", tr("CSV Files (*.csv);;All Files (*)"));
     // Check if the user canceled the dialog
@@ -461,6 +476,8 @@ void OrthosliceViewer::onGateSaveClicked() {
         return;
     }
 
+    qDebug() << amplitudeRatio;
+
     QTextStream out(&file);
     out << this->C_scan_double.size() << "," << this->C_scan_double[0].size() << "," << this->C_scan_double[0][0].size() << "\n";
     for (int i = 0; i < this->C_scan_double.size(); ++i) {
@@ -469,7 +486,7 @@ void OrthosliceViewer::onGateSaveClicked() {
             QStringList values;
             for (int k = 0; k < Ascan.size(); ++k) {
                 double Ascan_abs = std::abs(Ascan[k]); // Correctly computing the absolute value
-                if (Ascan_abs < 2*this->decayVector[k]) { // Corrected indexing
+                if (Ascan_abs < amplitudeRatio*this->decayVector[k]) { // Corrected indexing
                     values << QString::number(0);
                 } else {
                     // values << QString::number((Ascan_abs - this->decayVector[k])/Ascan_abs);

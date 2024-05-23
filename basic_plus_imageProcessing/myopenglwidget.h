@@ -9,7 +9,7 @@ class MyOpenGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Core
     Q_OBJECT
 
 public:
-    explicit MyOpenGLWidget(QWidget *parent = nullptr);
+    explicit MyOpenGLWidget(QWidget *parent = nullptr, QString savename="");
     ~MyOpenGLWidget();
     void convertStructureToVertices(const QVector<QVector<QVector<double>>>& structure);
 
@@ -35,6 +35,8 @@ private:
     double viewAngle_y;
     double visibilityThreshold;
     bool useDenoisedData;
+
+    QString fn;
 };
 
 #endif // MYOPENGLWIDGET_H

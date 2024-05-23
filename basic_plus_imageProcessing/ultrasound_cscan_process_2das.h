@@ -21,6 +21,8 @@ public:
                                   double fy);
     ~ultrasound_cscan_process_2DAS();
 
+    bool loadDataFromFile(const QString& filename);
+
 private:
     QVBoxLayout *layout2;
 
@@ -52,6 +54,8 @@ private:
 
     QVector<QVector<QVector<double>>> structure;
 
+    QString fn_save;
+
 public slots:
     // ******** 3rd page
     void onCscanScrollBarChanged(int value);
@@ -59,7 +63,7 @@ public slots:
     void updateCscanPlot();
     void updateStructurePlot();
     void SavePlot();
-    void onPlot3DButtonClicked();
+    QDialog* onPlot3DButtonClicked();
 
 private slots:
     // 2D　analytic-signal
@@ -76,6 +80,7 @@ private slots:
     // ******** 3rd page
     void load_structures();
     void Plot_Ccans_structures();
+    void loadAllCsvFiles();
 };
 
 #endif // ULTRASOUND_CSCAN_PROCESS_2DAS_H

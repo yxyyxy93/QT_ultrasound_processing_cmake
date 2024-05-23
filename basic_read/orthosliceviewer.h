@@ -66,6 +66,7 @@ private:
     void connectSignals();
 
     QPushButton *gateSaveButton; // Add this line
+    QComboBox *dBruleComboBox;
 
     QVector<double> signal;
     QVector<double> time;

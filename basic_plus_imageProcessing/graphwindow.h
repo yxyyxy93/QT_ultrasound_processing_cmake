@@ -12,7 +12,10 @@ class GraphWindow : public QMainWindow
 public:
     GraphWindow(QWidget *parent = nullptr);
     ~GraphWindow();
-    void setData(QVector<QVector<double>> data);
+    void setData(const QVector<QVector<double>> &data);
+    void setColorScaleRange(double min, double max);
+    void savePlotAsImage(const QString& filePath, const QString& format, int quality);
+
 private:
     QWidget *centralWidget;
     QCustomPlot *plot;

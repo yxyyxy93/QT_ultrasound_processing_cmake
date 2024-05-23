@@ -55,6 +55,12 @@ if(NOT FFTW_LIBRARY)
 endif()
 # Linking the FFTW3 library
 target_link_libraries(${PROJECT_NAME} ${FFTW_LIBRARY})
+
+# Copy FFTW DLL to the output directory
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${FFTW_LIB_DIR}/libfftw3-3.dll"
+    $<TARGET_FILE_DIR:${PROJECT_NAME}>)
 # ----------
 
 include(GNUInstallDirs)

@@ -36,13 +36,11 @@ ultrasound_cscan_process_2DAS::ultrasound_cscan_process_2DAS(QWidget *parent,
     QWidget *page2 = new QWidget();
     QVBoxLayout *layout2 = new QVBoxLayout(page2);
     tabWidget->addTab(page2, tr("2D analytic-signal analysis"));
-
     // Adding widgets to the second page
     QPushButton *myButton_2DAS = new QPushButton(tr("Plot C-scan images"), this);
     QPushButton *myButton_showkernel = new QPushButton(tr("Plot 2D hilbert kernels"), this);
     QProgressBar *m_progressBar_page2 = new QProgressBar;
     m_progressBar_page2->setRange(0, 100);
-
     // Adding QLineEdit widgets and their labels
     QLineEdit *scEdit = new QLineEdit(this);
     QLabel *scLabel = new QLabel(tr("coarse scale space parameter:"));
@@ -62,7 +60,6 @@ ultrasound_cscan_process_2DAS::ultrasound_cscan_process_2DAS(QWidget *parent,
     QPushButton *button = new QPushButton(tr("Update 2D analytic-signal parameters"), this);
     QVBoxLayout *buttonLayout = new QVBoxLayout;
     buttonLayout->addWidget(button);
-
     // Assembling the second page
     layout2->addWidget(myButton_2DAS);
     layout2->addWidget(myButton_showkernel);
@@ -72,7 +69,6 @@ ultrasound_cscan_process_2DAS::ultrasound_cscan_process_2DAS(QWidget *parent,
 
     QPushButton *stat_button = new QPushButton(tr("statistic"), this);
     layout2->addWidget(stat_button);
-
     // ********************* 3rd page *********************
     this->page3 = new QWidget();
     this->layout3 = new QVBoxLayout(page3);
@@ -81,13 +77,11 @@ ultrasound_cscan_process_2DAS::ultrasound_cscan_process_2DAS(QWidget *parent,
     // create a button to 3D plot
     QPushButton *plot3DButton = new QPushButton("Plot 3D structure", page3);
     this->layout3->addWidget(plot3DButton);
-
     // Assembling the 3rd page
     this->layout3->addWidget(loadButton);
     this->layout3->addWidget(plotButton);
     this->layout3->addWidget(plot3DButton);
     tabWidget->addTab(page3, tr("Plot Cscans and Structures"));
-
     // Connect signals to slots
     connect(myButton_2DAS, &QPushButton::clicked, this, &ultrasound_cscan_process_2DAS::handleButton_2DAS);
     connect(myButton_showkernel, &QPushButton::clicked, this, &ultrasound_cscan_process_2DAS::handleButton_myButton_showkernel);
@@ -102,6 +96,10 @@ ultrasound_cscan_process_2DAS::ultrasound_cscan_process_2DAS(QWidget *parent,
     connect(loadButton, &QPushButton::clicked, this, &ultrasound_cscan_process_2DAS::load_structures);
     connect(plotButton, &QPushButton::clicked, this, &ultrasound_cscan_process_2DAS::Plot_Ccans_structures);
     connect(plot3DButton, &QPushButton::clicked, this, &ultrasound_cscan_process_2DAS::onPlot3DButtonClicked);
+
+    QPushButton *loadAllCsvButton = new QPushButton("Load All CSV Files", this);
+    this->layout3->addWidget(loadAllCsvButton);
+    connect(loadAllCsvButton, &QPushButton::clicked, this, &ultrasound_cscan_process_2DAS::loadAllCsvFiles);
 
     // Show the tab widget
     tabWidget->show();
@@ -711,46 +709,18 @@ void ultrasound_cscan_process_2DAS::handleButton_myButton_stat(){
 // ************************** 3rd page
 void ultrasound_cscan_process_2DAS::load_structures(){
     // get the file name
-    QString filename = QFileDialog::getOpenFileName(nullptr,
+    this->fn_save = QFileDialog::getOpenFileName(nullptr,
                                             "Open file",
                                             "",
                                             "Text files (*.txt; *.tdms; *.npy; *.bin; *.csv)");
     if (this->fn.isEmpty()) {
         qWarning() << "No file selected.";
     }
-    // Determine the file type based on its extension
-    QFileInfo fileInfo(filename);
-    QFile file(filename);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qWarning() << "Could not open file:" << file.errorString();
+    // Load data from file
+    if (!loadDataFromFile(this->fn_save)) {
+        qWarning() << "Failed to load data from file.";
+        return;
     }
-    QTextStream in(&file);
-    // Read dimensions from the first line
-    QString header = in.readLine();
-    QStringList dimensions = header.split(',');
-    int x = dimensions[0].toInt();
-    int y = dimensions[1].toInt();
-    int z = dimensions[2].toInt();
-    qDebug() << x << y << z;
-    // Resize your member 3D QVector based on the dimensions
-    this->structure.resize(x);
-    for (int i = 0; i < x; ++i) {
-        this->structure[i].resize(y);
-        for (int j = 0; j < y; ++j) {
-            this->structure[i][j].resize(z);
-        }
-    }
-    // Read the flattened data and reshape it
-    for (int i = 0; i < x; ++i) {
-        for (int j = 0; j < y; ++j) {
-            QString line = in.readLine();
-            QStringList values = line.split(',');
-            for (int k = 0; k < z; ++k) {
-                this->structure[i][j][k] = values[k].toDouble();
-            }
-        }
-    }
-    file.close();
 }
 
 void ultrasound_cscan_process_2DAS::Plot_Ccans_structures() {
@@ -923,17 +893,162 @@ void ultrasound_cscan_process_2DAS::SavePlot(){
     configurePlotForSaving(customPlot_structure, true); // Restore the plot's original state
 }
 
-void ultrasound_cscan_process_2DAS::onPlot3DButtonClicked() {
-    QDialog *plotDialog = new QDialog(this); // 'this' makes MainWindow the parent
+QDialog* ultrasound_cscan_process_2DAS::onPlot3DButtonClicked() {
+/**
+ * Creates and displays a QDialog containing a 3D plot of the ultrasound data.
+ *
+ * This function initializes a QDialog and sets it to delete itself automatically upon closure.
+ * It adds an OpenGL widget configured to display 3D ultrasound data stored in `this->structure`,
+ * which is derived from the currently loaded file specified by `this->fn_save`.
+ *
+ * The dialog is displayed with a predefined size of 800x600 pixels.
+ *
+ * @return QDialog* Pointer to the QDialog that displays the 3D plot. This allows for external
+ *         management of the dialog, particularly useful in sequential data processing workflows.
+ *
+ * Usage example:
+ * QDialog* plotDialog = onPlot3DButtonClicked();
+ * plotDialog->exec(); // Displays the dialog modally
+ */
+    QDialog *plotDialog = new QDialog(this);
     plotDialog->setWindowTitle("3D Plot");
+    plotDialog->setAttribute(Qt::WA_DeleteOnClose);
 
-    MyOpenGLWidget *openGLWidget = new MyOpenGLWidget(plotDialog);
+    MyOpenGLWidget *openGLWidget = new MyOpenGLWidget(plotDialog, this->fn_save);
     openGLWidget->convertStructureToVertices(this->structure);
     QVBoxLayout *layout = new QVBoxLayout(plotDialog);
     layout->addWidget(openGLWidget);
 
     plotDialog->setLayout(layout);
-    plotDialog->resize(800, 600); // Set a default size
+    plotDialog->resize(800, 600);
+
+    QTimer *closeTimer = new QTimer(plotDialog);
+    closeTimer->setSingleShot(true);
+    closeTimer->setInterval(1000);  // Close after 1000 ms (1 second)
+    connect(closeTimer, &QTimer::timeout, plotDialog, &QDialog::accept);
+    closeTimer->start();
+
     plotDialog->show();
+    return plotDialog;
 }
 
+void ultrasound_cscan_process_2DAS::loadAllCsvFiles() {
+/**
+ * Iterates through all CSV files with a "dB.csv" suffix in a selected directory,
+ * loads each file, and displays its contents as a 3D plot.
+ *
+ * This method first prompts the user to select a directory. It then filters and processes
+ * all CSV files ending in "dB.csv" within that directory. Each file's data is loaded and
+ * displayed using a dedicated QDialog that hosts a 3D representation of the data.
+ *
+ * The processing is done sequentially: each file's dialog must be closed before the next file
+ * is processed, which is managed by a QEventLoop that pauses execution until the current dialog is closed.
+ *
+ * If no directory is selected or no appropriate files are found, the function logs a debug message
+ * and exits without further action.
+ *
+ * Important: Ensure that the plotting function (`onPlot3DButtonClicked`) properly initializes any
+ * required state, as it will be called repeatedly in a loop.
+ *
+ * @note This function depends on Qt's QDialog, QDir, and QFileDialog classes for UI interactions
+ *       and file handling.
+ *
+ * Example usage:
+ * QPushButton *button = new QPushButton("Load and Display All dB CSV Files");
+ * connect(button, &QPushButton::clicked, this, &ultrasound_cscan_process_2DAS::loadAllCsvFiles);
+ */
+    QString directoryPath = QFileDialog::getExistingDirectory(nullptr, "Select Directory", "");
+    if (directoryPath.isEmpty()) {
+        qDebug() << "No directory selected.";
+        return;
+    }
+    QDir directory(directoryPath);
+    QStringList csvFiles = directory.entryList(QStringList() << "*dB.csv", QDir::Files);
+    if (csvFiles.isEmpty()) {
+        qDebug() << "No matching 'dB.csv' files found in the directory.";
+        return;
+    }
+    foreach (const QString &file, csvFiles) {
+        QString filePath = directory.absoluteFilePath(file);
+        qDebug() << "Processing file:" << filePath;
+        this->fn_save = filePath;  // Set the file path for the current processing
+        if (!loadDataFromFile(filePath)) {
+            qWarning() << "Failed to load data from file.";
+            continue;
+        }
+        QDialog* plotDialog = this->onPlot3DButtonClicked();
+        QEventLoop loop;
+        QObject::connect(plotDialog, &QDialog::finished, &loop, &QEventLoop::quit);
+        loop.exec();  // This will block until the dialog is closed by the timer
+    }
+}
+
+bool ultrasound_cscan_process_2DAS::loadDataFromFile(const QString& filename) {
+    /**
+     * Loads and parses structured data from a specified file into a 3D QVector.
+     *
+     * This function opens a file with the given filename, expecting it to contain structured data in a specific format:
+     * The first line should contain three integers separated by commas, representing the dimensions (x, y, z) of a 3D array.
+     * Subsequent lines should contain flattened 3D array data, also separated by commas.
+     *
+     * The function first reads the dimensions from the file, then initializes and resizes the 'structure' member QVector
+     * of the class to fit these dimensions. It then reads and assigns values to each element of the 3D QVector.
+     *
+     * If the file cannot be opened, or if there are any issues with the data format (like insufficient data points per line),
+     * the function will log warnings and return false.
+     *
+     * @param filename The path to the file to be loaded.
+     * @return Returns true if the file is successfully opened and the data is loaded and parsed without errors.
+     *         Returns false if the file cannot be opened or if any errors occur during parsing.
+     *
+     * Example usage:
+     * if (!loadDataFromFile("path/to/data.csv")) {
+     *     std::cerr << "Data loading failed." << std::endl;
+     * }
+     */
+    QFile file(filename);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qWarning() << "Could not open file:" << file.errorString();
+        return false; // Return false to indicate the file couldn't be opened
+    }
+    QTextStream in(&file);
+
+    // Read dimensions from the first line
+    QString header = in.readLine();
+    QStringList dimensions = header.split(',');
+    if (dimensions.size() < 3) {
+        qWarning() << "Invalid header in file";
+        file.close();
+        return false; // Return false if header is not as expected
+    }
+
+    int x = dimensions[0].toInt();
+    int y = dimensions[1].toInt();
+    int z = dimensions[2].toInt();
+    qDebug() << "Dimensions loaded:" << x << y << z;
+
+    // Resize your member 3D QVector based on the dimensions
+    this->structure.resize(x);
+    for (int i = 0; i < x; ++i) {
+        this->structure[i].resize(y);
+        for (int j = 0; j < y; ++j) {
+            this->structure[i][j].resize(z);
+        }
+    }
+    // Read the flattened data and reshape it
+    for (int i = 0; i < x; ++i) {
+        for (int j = 0; j < y; ++j) {
+            QString line = in.readLine();
+            QStringList values = line.split(',');
+            if (values.size() < z) {
+                qWarning() << "Insufficient data in line" << i << j;
+                continue; // Skip this line if there are not enough data points
+            }
+            for (int k = 0; k < z; ++k) {
+                this->structure[i][j][k] = values[k].toDouble();
+            }
+        }
+    }
+    file.close();
+    return true; // Return true to indicate successful loading
+}

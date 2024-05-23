@@ -28,8 +28,12 @@ const GLfloat axisVertices[] = {
 GLuint axisVAO, axisVBO;
 
 // Constructor
-MyOpenGLWidget::MyOpenGLWidget(QWidget *parent)
+MyOpenGLWidget::MyOpenGLWidget(QWidget *parent, QString savename)
     : QOpenGLWidget(parent), m_program(nullptr), viewAngle_x(45.0f), viewAngle_y(45.0f), visibilityThreshold(0.5f), useDenoisedData(false) {
+
+    // Extract the base name without the extension
+    QString baseName = QFileInfo(savename).completeBaseName();
+    this->fn = baseName + ".png";
 
     // Initialize the scrollbar for adjusting the view angle
     QScrollBar *angleScrollBar_x = new QScrollBar(Qt::Horizontal, this);
@@ -38,32 +42,26 @@ MyOpenGLWidget::MyOpenGLWidget(QWidget *parent)
     QScrollBar *angleScrollBar_y = new QScrollBar(Qt::Horizontal, this);
     angleScrollBar_y->setRange(0, 360); // Range of angles
     angleScrollBar_y->setValue(45); // Initial angle
-
     // Connect the scrollbar's signal to the slot for angle change
     connect(angleScrollBar_x, &QScrollBar::valueChanged, this, &MyOpenGLWidget::setViewAngle_x);
     connect(angleScrollBar_y, &QScrollBar::valueChanged, this, &MyOpenGLWidget::setViewAngle_y);
-
     // Layout to add scrollbar below the OpenGL widget
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->addWidget(angleScrollBar_x);
     layout->addWidget(angleScrollBar_y);
     layout->setAlignment(Qt::AlignBottom);
-
     // Initialize the scrollbar for setting the visibility threshold
     QScrollBar *thresholdScrollBar = new QScrollBar(Qt::Horizontal, this);
     thresholdScrollBar->setRange(0, 100); // Threshold range (e.g., 0-100%)
     thresholdScrollBar->setValue(100); // Initial threshold value
     // Connect the scrollbar's signal to the slot for threshold change
     connect(thresholdScrollBar, &QScrollBar::valueChanged, this, &MyOpenGLWidget::setVisibilityThreshold);
-
     // Create and add the checkbox for useDenoisedData
     QCheckBox *denoiseCheckbox = new QCheckBox("Use Denoised Data", this);
     connect(denoiseCheckbox, &QCheckBox::stateChanged, this, &MyOpenGLWidget::toggleDenoisedData);
     layout->addWidget(denoiseCheckbox);
-
     // Set the layout alignment
     layout->setAlignment(Qt::AlignBottom);
-
     layout->addWidget(thresholdScrollBar);
     layout->setAlignment(Qt::AlignBottom);
 }
@@ -125,7 +123,6 @@ void MyOpenGLWidget::initializeGL() {
     m_program = new QOpenGLShaderProgram(this);
     m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
     m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
-
     if (!m_program->link()) {
         qDebug() << "Shader Program Error:" << m_program->log();
         return; // Add error handling
@@ -319,7 +316,9 @@ void MyOpenGLWidget::convertStructureToVertices(const QVector<QVector<QVector<do
     saveValuesToCSV(values, "values.csv");
     GraphWindow *graphWindow = new GraphWindow();
     graphWindow->setData(indices); // Set the data to be visualized
+    graphWindow->setColorScaleRange(0.0, 255.0);
     graphWindow->show(); // Show the graph window
+    graphWindow->savePlotAsImage(this->fn, "PNG", -1);
 }
 
 QVector3D MyOpenGLWidget::mapValueToColor(double value, double minVal, double maxVal) {

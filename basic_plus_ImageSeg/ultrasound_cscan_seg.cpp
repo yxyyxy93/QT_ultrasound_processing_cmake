@@ -89,6 +89,13 @@ ultrasound_cscan_seg::ultrasound_cscan_seg(QWidget *parent,
         this->cropSignalInput->setPlaceholderText("Enter crop values (start, end)");
         this->layout3->addWidget(this->cropSignalInput);
     }
+    if (!widgetExistsInLayout<QLineEdit>(this->layout3, "decayInput")) {
+        // Create the Decay Input Field
+        this->decayInput = new QLineEdit(this);
+        this->decayInput->setObjectName("decayInput"); // Assign unique object name
+        this->decayInput->setPlaceholderText("Enter decay rate (dB/mm/MHz)");
+        this->layout3->addWidget(this->decayInput);
+    }
     // Check the ComboBox to choose the signal to save
     if (!widgetExistsInLayout<QComboBox>(this->layout3, "myComboBox_savepattern")) {
         // Create the ComboBox
@@ -132,14 +139,11 @@ ultrasound_cscan_seg::ultrasound_cscan_seg(QWidget *parent,
         viewer->setAttribute(Qt::WA_DeleteOnClose); // Ensure it's deleted on close
         viewer->show();
     });
-
     // Create the Cepstrum calculation button
     QPushButton *calculateCepstrumButton = new QPushButton(tr("Calculate Cepstrum"), page4);
     QPushButton *plotCepstrumButton = new QPushButton(tr("Plot Cepstrum"), page4);
-
     layout4->addWidget(calculateCepstrumButton);
     layout4->addWidget(plotCepstrumButton);
-
     // Connect the button's clicked signal to the relevant slot for calculation
     connect(calculateCepstrumButton, &QPushButton::clicked, this, &ultrasound_cscan_seg::handleCalculateCepstrum);
     // Connect the button's clicked signal for plotting
@@ -208,7 +212,6 @@ void ultrasound_cscan_seg::handleButton_Cscan() {
         //        this->updatePlot_page2();
     });
     Q_ASSERT(this->scrollBarZ_page2 != nullptr);
-
     // ************** push botton to draw lines
     QPushButton *myButton_draw = new QPushButton(tr("Plot and draw lines"), this);
     connect(myButton_draw, &QPushButton::clicked, this,
@@ -223,22 +226,18 @@ void ultrasound_cscan_seg::handleButton_Cscan() {
 void ultrasound_cscan_seg::handleButton_draw(){
     int sliceZ = this->scrollBarZ_page2->value();
     QImage image = convertToImage<std::complex<double>>(ultrasound_Cscan_process::C_scan_AS, sliceZ);
-
     if (this->scene == nullptr) {
         this->scene = new CustomGraphicsScene(this);
     }
-
     // Clear drawn lines in the CustomGraphicsScene
     this->scene->clearDrawnLines();
     this->scene->removeAllPolygons();
-
     //    connect(this->scene, &CustomGraphicsScene::lineDrawn, this, &ultrasound_cscan_seg::onLineDrawn);
     // Set the scene for the embedded view
     this->embeddedView->setScene(scene);
     //    scene->setSceneRect(0, 0, 800, 600);  // adjust the size as per your requirement
     scene->addPixmap(QPixmap::fromImage(image));
     this->embeddedView->show();
-
     // add buttons to draw masks and save multitudes of cscans
     // Check and add "Close Area" button
     if (!widgetExistsInLayout<QPushButton>(this->layout2, "Close Area")) {
@@ -431,6 +430,12 @@ void ultrasound_cscan_seg::handleButton_multiSNR() {
             qDebug() << "File deleted:" << file;
         }
     }
+    // for attenuation
+    double decayRateDbPerMmPerMhz = decayInput->text().toDouble(); // Input for decay rate in dB/mm/MHz
+    double frequencyMhz = 20.0; // Default frequency in MHz
+    double samplingRateMhz = 200.0; // Default sampling rate in MHz
+    double waveVelocity = 3000.0; // Wave velocity in m/s
+
     if (SNRInput) {
         QStringList snrValuesStr = SNRInput->text().split(',');
         foreach (const QString &snrStr, snrValuesStr) {  // Process each SNR value
@@ -461,7 +466,7 @@ void ultrasound_cscan_seg::handleButton_multiSNR() {
                 for (int i = 0; i < this->C_scan_AS.size(); i++) {
                     for (int j = 0; j < this->C_scan_AS[i].size(); j++) {
                         QVector<std::complex<double>> Ascan = this->C_scan_AS[i][j];
-                        QStringList values;
+                        QStringList values;                  
                         if (selectedIndex == 3) { // cepstra
                             QVector<std::complex<double>> half_fft2Vector = FFTProcessing::processFFT(real(Ascan));
                             for (int k = startValue; k <= endValue; k+=downsampleRate) {
@@ -469,14 +474,19 @@ void ultrasound_cscan_seg::handleButton_multiSNR() {
                             }
                         }
                         for (int k = startValue; k <= endValue; k+=downsampleRate) {
+                            double value = 0.0;
+                            double k_dis = (k - startValue)/downsampleRate;
+                            double distanceMm = (k_dis / samplingRateMhz) * waveVelocity * 1e-3; // Convert distance to mm
+                            double decay = pow(10, -decayRateDbPerMmPerMhz * distanceMm * frequencyMhz / 20.0); // Apply decay
+
                             if (selectedIndex == 0) {
-                                values << QString::number(1*Ascan[k].real());
+                                values << QString::number(1*Ascan[k].real() * decay);
                             }
                             else if (selectedIndex == 1) {
-                                values << QString::number(1*abs(Ascan[k]));
+                                values << QString::number(1*abs(Ascan[k]) * decay);
                             }
                             else if (selectedIndex == 2) {
-                                values << QString::number(atan2(Ascan[k].imag(), Ascan[k].real()));
+                                values << QString::number(atan2(Ascan[k].imag() * decay, Ascan[k].real() * decay));
                             }
                             else {
                                 qDebug() << "Unknown option selected";
@@ -630,7 +640,6 @@ void ultrasound_cscan_seg::processFolder(const QString &path) {
                     // If no extension found, use the original path as is
                     filePathWithoutExtension = originalFilePath;
                 }
-                // Step 2: Find the last slash to separate the directory path and the filename
                 int lastSlashIndex = filePathWithoutExtension.lastIndexOf('/');
                 QString directoryPath = filePathWithoutExtension.left(lastSlashIndex); // Contains the path without the filename
                 QString filename = filePathWithoutExtension.mid(lastSlashIndex); // Contains the filename and initial slash

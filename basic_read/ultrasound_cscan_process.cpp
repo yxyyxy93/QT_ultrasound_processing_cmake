@@ -71,12 +71,10 @@ ultrasound_Cscan_process::ultrasound_Cscan_process(QWidget *parent,
             this,
             &ultrasound_Cscan_process::handleButton_surface);
     this->layout->addWidget(this->myButton_surface);
-
     // ************** progress bar
     this->m_progressBar = new QProgressBar;
     this->m_progressBar->setRange(0, 100);
     this->addNewWidgetAndReorderLayout(this->m_progressBar);
-
     // ****
 }
 
@@ -162,46 +160,47 @@ void ultrasound_Cscan_process::handleButton_load()
 }
 
 void ultrasound_Cscan_process::handleButton_save(){
+    // save C_scan
     QString filename = QFileDialog::getSaveFileName(this,
                                                     tr("Save Vector"),
                                                     QDir::homePath(),
-                                                    tr("Text Files (*.txt)"));
-    QFile file(filename);
-    if (file.open(QIODevice::WriteOnly)) {
-        QDataStream out(&file); // Create a QDataStream to write to the file
-
-        // Write the dimensions as a header
-        qint32 n1 = this->C_scan_double.size();
-        qint32 n2 = this->C_scan_double[0].size();
-        qint32 n3 = this->C_scan_double[0][0].size();
-        out << n1 << n2 << n3;
-
-        // Serialize the data to the stream
-        out << this->C_scan_double;
-
-        file.close();
+                                                    tr("CSV Files (*.csv)"));
+    if (filename.isEmpty()) {
+        return;
     }
-    // save C_scan_AS
-    filename = QFileDialog::getSaveFileName(this,
-                                            tr("Save Vector"),
-                                            QDir::homePath(),
-                                            tr("Text Files AS (*.txt)"));
-    std::string stdString = filename.toStdString();
-    std::ofstream fileas(stdString, std::ios::binary | std::ios::out);
+    // Ensure the file has the .csv extension, even if the user didn't type it
+    if (!filename.endsWith(".csv", Qt::CaseInsensitive)) {
+        filename += ".csv";
+    }
+
+    QFile file(filename);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        qWarning() << "Could not open file for writing:" << file.errorString();
+        return;
+    }
+    QTextStream out(&file);
+
     // Write the dimensions
-    int32_t n1 = this->C_scan_AS.size();
-    int32_t n2 = this->C_scan_AS[0].size();
-    int32_t n3 = this->C_scan_AS[0][0].size();
-    fileas.write(reinterpret_cast<char*>(&n1), sizeof(n1));
-    fileas.write(reinterpret_cast<char*>(&n2), sizeof(n2));
-    fileas.write(reinterpret_cast<char*>(&n3), sizeof(n3));
+    int32_t n1 = this->C_scan_double.size();
+    int32_t n2 = this->C_scan_double[0].size();
+    int32_t n3 = this->C_scan_double[0][0].size();
+    // Write dimensions as the first line
+    if (!this->C_scan_double.isEmpty() && !this->C_scan_double[0].isEmpty()) {
+        out << n1 << "," << n2 << "," << n3 << "\n";
+    } else {
+        qWarning() << "Data is empty, cannot write to file";
+        file.close();
+        return;
+    }
     // Write the data
     for (int i = 0; i < n1; ++i) {
         for (int j = 0; j < n2; ++j) {
-            for (int k = 0; k < n3; ++k) {
-                double value = abs(this->C_scan_AS[i][j][k]);
-                fileas.write(reinterpret_cast<char*>(&value), sizeof(value));
+            QVector<double> Ascan = this->C_scan_double[i][j];
+            QStringList values;
+            for (int k = 0; k < n3; k++) {
+                values << QString::number(Ascan[k]);
             }
+            out << values.join(',') << "\n";
         }
     }
     file.close();
@@ -605,16 +604,16 @@ void ultrasound_Cscan_process::calculateSurface() {
     for (int i = 0; i < this->C_scan_AS.size(); i++) {
         for (int j = 0; j < this->C_scan_AS[i].size(); j++) {
             QVector<std::complex<double>> Ascan_as = this->C_scan_AS[i][j];
-            //            auto maxElementIndex = std::max_element(Ascan_as.begin(), Ascan_as.end(),
-            //                                                    [](std::complex<double> a, std::complex<double> b) {
-            //                                                        return std::abs(a) < std::abs(b);
-            //                                                    });
+            auto maxElementIndex = std::max_element(Ascan_as.begin(), Ascan_as.end(),
+                                                    [](std::complex<double> a, std::complex<double> b) {
+                                                        return std::abs(a) < std::abs(b);
+                                                    });
             // *********** tailored for exp. *************** !
-            double threshold_val = 0.5;
-            auto maxElementIndex = std::find_if(Ascan_as.begin(), Ascan_as.end(),
-                                                [threshold_val](std::complex<double> a) {
-                                                    return std::abs(a) > threshold_val;
-                                                });
+            // double threshold_val = 0.5;
+            // auto maxElementIndex = std::find_if(Ascan_as.begin(), Ascan_as.end(),
+            //                                     [threshold_val](std::complex<double> a) {
+            //                                         return std::abs(a) > threshold_val;
+            //                                     });
             double currentIndex = std::distance(Ascan_as.begin(), maxElementIndex);
             if (currentIndex > threshold) {
                 qDebug() << "out of threshold";

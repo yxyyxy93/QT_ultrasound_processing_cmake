@@ -79,6 +79,7 @@ private:
     QLineEdit* multisnrInput;
     QLineEdit* downsampleRateInput;
     QLineEdit* cropSignalInput;
+    QLineEdit* decayInput;
     QComboBox* myComboBox_savepattern;
 
     QLabel *folderLabel;
