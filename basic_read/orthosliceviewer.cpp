@@ -120,8 +120,14 @@ void OrthosliceViewer::setupUI() {
     // Initialize the gate and save button
     gateSaveButton = new QPushButton("Gate and Save Structure");
     this->mainVLayout->addWidget(gateSaveButton); // Add it to the main vertical layout
-    connect(gateSaveButton, &QPushButton::clicked, this, &OrthosliceViewer::onGateSaveClicked);
-    qDebug() << "finish add widgets";
+    try {
+        connect(gateSaveButton, &QPushButton::clicked, this, &OrthosliceViewer::onGateSaveClicked);
+        qDebug() << "Finished adding widgets";
+    } catch (const std::exception& e) {
+        qCritical() << "An error occurred: " << e.what();
+    } catch (...) {
+        qCritical() << "An unknown error occurred.";
+    }
     // After making changes to the layout, update the widget
     this->update(); // This will schedule a repaint event for the widget
     this->adjustSize(); // This will adjust the size of the widget to fit its contents
@@ -489,8 +495,10 @@ void OrthosliceViewer::onGateSaveClicked() {
                 if (Ascan_abs < amplitudeRatio*this->decayVector[k]) { // Corrected indexing
                     values << QString::number(0);
                 } else {
-                    // values << QString::number((Ascan_abs - this->decayVector[k])/Ascan_abs);
-                    values << QString::number(20 * log10(Ascan_abs/this->decayVector[k]));
+                    values << QString::number(1);
+                    // convincing factor - normalized distance
+                    // values << QString::number((Ascan_abs - amplitudeRatio*this->decayVector[k])/amplitudeRatio*this->decayVector[k]);
+                    // values << QString::number(20 * log10(Ascan_abs/(amplitudeRatio*this->decayVector[k])));
                 }
             }
             out << values.join(',') << "\n";

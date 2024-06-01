@@ -291,34 +291,44 @@ void MyOpenGLWidget::convertStructureToVertices(const QVector<QVector<QVector<do
         QVector<double> tempIndices;
         QVector<double> tempValues;
         for (int j = 0; j < structure_dn[i].size(); ++j) {
+            double maxVal = 0.1;
+            int maxIndex = -1;
+            double sumValues = 0.0;
+            int count = 0;
             for (int k = 0; k < structure_dn[i][j].size(); ++k) {
-                // structure_dn[i][j][k] = structure_dn[i][j][k]/maxVal;
-                if (structure_dn[i][j][k] > 0.7) {
-                    tempIndices.append(static_cast<double>(k)); // Save the index along the 3rd dimension.
-                    tempValues.append(structure_dn[i][j][k]); // Save the value.
-                    break; // Move to the next 2D vector after finding the first value > 0.9.
+                double value = structure_dn[i][j][k];
+                sumValues += value;
+                count++;
+                if (value > maxVal) {
+                    maxVal = value;
+                    maxIndex = k;
                 }
             }
-            // If no value > 0.9 was found in the 3rd dimension, append -1 or another placeholder.
-            if(tempIndices.size() == j) {
-                tempIndices.append(-1); // Placeholder for not found.
-                tempValues.append(0.0); // Placeholder value, assuming 0 is not a valid value in your context.
-            }
+            // Save the index of the maximum value along the 3rd dimension.
+            tempIndices.append(static_cast<double>(maxIndex));
+            // Save the average value along the 3rd dimension.
+            double avgValue = count > 0 ? sumValues / count : 0.0;
+            tempValues.append(avgValue);
         }
         indices.append(tempIndices);
         values.append(tempValues);
     }
-    // // Debug output, replace with your method of saving or further processing.
-    // qDebug() << "Indices:" << indices;
-    // qDebug() << "Values:" << values;
     // Now save them to CSV files
-    saveValuesToCSV(indices, "indices.csv");
-    saveValuesToCSV(values, "values.csv");
+    // Extract the base name (prefix) from this->fn
+    QFileInfo fileInfo(this->fn);
+    QString prefix = fileInfo.completeBaseName(); // Get the base name without extension
+    // Construct the CSV file names using the prefix
+    QString indicesFilename = prefix + "_indices.csv";
+    QString valuesFilename = prefix + "_values.csv";
+    // Save the indices and values to CSV files with the constructed names
+    saveValuesToCSV(indices, indicesFilename);
+    saveValuesToCSV(values, valuesFilename);
     GraphWindow *graphWindow = new GraphWindow();
     graphWindow->setData(indices); // Set the data to be visualized
     graphWindow->setColorScaleRange(0.0, 255.0);
     graphWindow->show(); // Show the graph window
     graphWindow->savePlotAsImage(this->fn, "PNG", -1);
+    qDebug() << this->fn;
 }
 
 QVector3D MyOpenGLWidget::mapValueToColor(double value, double minVal, double maxVal) {
