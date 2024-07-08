@@ -291,7 +291,7 @@ void MyOpenGLWidget::convertStructureToVertices(const QVector<QVector<QVector<do
         QVector<double> tempIndices;
         QVector<double> tempValues;
         for (int j = 0; j < structure_dn[i].size(); ++j) {
-            double maxVal = 0.1;
+            double maxVal = 0.8;
             int maxIndex = -1;
             double sumValues = 0.0;
             int count = 0;
