@@ -291,7 +291,7 @@ void MyOpenGLWidget::convertStructureToVertices(const QVector<QVector<QVector<do
         QVector<double> tempIndices;
         QVector<double> tempValues;
         for (int j = 0; j < structure_dn[i].size(); ++j) {
-            double maxVal = 0.8;
+            double maxVal = 0.0001;
             int maxIndex = -1;
             double sumValues = 0.0;
             int count = 0;
@@ -334,10 +334,8 @@ void MyOpenGLWidget::convertStructureToVertices(const QVector<QVector<QVector<do
 QVector3D MyOpenGLWidget::mapValueToColor(double value, double minVal, double maxVal) {
     // Normalize the value between 0 and 1
     double v = (value - minVal) / (maxVal - minVal);
-
     double r, g, b;
     r = g = b = 1.0; // Initialize with white color
-
     if (v < 0.25) {
         r = 0;
         g = 4 * v;
